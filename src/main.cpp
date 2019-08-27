@@ -3,6 +3,46 @@
 
 #include "wr_opengl.cpp"
 
+const char *vertexShaderSource = R"glsl(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+void main()
+{
+    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+}
+)glsl";
+
+const char *fragmentShaderSource = R"glsl(
+#version 330 core
+out vec4 FragColor;
+
+void main()
+{
+    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+} }
+)glsl";
+
+bool sdl_process_events()
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
+    {
+        switch (event.type)
+        {
+            case SDL_KEYUP:
+            {
+                if (event.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 int main(int argc, char* argv[])
 {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -36,23 +76,73 @@ int main(int argc, char* argv[])
     bool stopping = false;
     while (!stopping)
     {
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
+        stopping = sdl_process_events();
+
+#define SHADER_LOG_SIZE 512
+        // Vertex shader
+        GLuint vertexShader;
         {
-            switch (event.type)
+            vertexShader = glCreateShader(GL_VERTEX_SHADER);
+            glShaderSource(vertexShader, 1, &vertexShaderSource, 0);
+            int success;
+            glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+            if (!success)
             {
-                case SDL_KEYUP:
-                {
-                    if (event.key.keysym.sym == SDLK_ESCAPE)
-                    {
-                        stopping = true;
-                    }
-                }
+                char log[SHADER_LOG_SIZE];
+                glGetShaderInfoLog(vertexShader, SHADER_LOG_SIZE, NULL, log);
+                printf("Vertex shader compilation failed: %s\n", log);
             }
-            /* handle your event here */
         }
+
+        // Fragment shader
+        GLuint fragmentShader;
+        {
+            fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+            glShaderSource(fragmentShader, 1, &fragmentShaderSource, 0);
+            int success;
+            glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+            if (!success)
+            {
+                char log[SHADER_LOG_SIZE];
+                glGetShaderInfoLog(fragmentShader, SHADER_LOG_SIZE, NULL, log);
+                printf("Fragment shader compilation failed: %s\n", log);
+            }
+        }
+
+        GLuint shaderProgram;
+        {
+            shaderProgram = glCreateProgram();
+            glAttachShader(shaderProgram, vertexShader);
+            glAttachShader(shaderProgram, fragmentShader);
+            glLinkProgram(shaderProgram);
+            int success;
+            char log[512];
+            glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+            if(!success) {
+                glGetProgramInfoLog(shaderProgram, 512, NULL, log);
+                printf("Shader program linking failed: %s\n", log);
+            }
+
+            glUseProgram(shaderProgram);
+            glDeleteShader(vertexShader);
+            glDeleteShader(fragmentShader);
+        }
+
+
+        float vertices[] = 
+        {
+             0.0f,  0.5f, // Vertex 1 (X, Y)
+             0.5f, -0.5f, // Vertex 2 (X, Y)
+            -0.5f, -0.5f  // Vertex 3 (X, Y)
+        };
+
+        GLuint vbo;
+        glGenBuffers(1, &vbo); 
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
         /* do some other stuff here -- draw your app, etc. */
-        glClearColor(1.0f, 0.5f, 0.0f, 10.0f);
+        glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         SDL_GL_SwapWindow(window);
