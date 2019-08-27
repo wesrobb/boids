@@ -1,17 +1,13 @@
 #include "SDL.h"
-#include "SDL_opengl.h"
-#include "SDL_opengl_glext.h"
 #include <stdio.h>
 
-typedef void (GLAPIENTRY *glClearColorFn)(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
-
-typedef void (GLAPIENTRY *glClearFn)(GLbitfield mask);
+#include "wr_opengl.cpp"
 
 int main(int argc, char* argv[])
 {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
     SDL_Init(SDL_INIT_EVERYTHING);         // Initialize SDL2
 
@@ -34,11 +30,7 @@ int main(int argc, char* argv[])
     }
 
     SDL_GLContext gl = SDL_GL_CreateContext(window);
-
-
-    // TODO: Ensure these are not null
-    glClearColorFn glClearColor = (glClearColorFn)SDL_GL_GetProcAddress("glClearColor");
-    glClearFn glClear = (glClearFn)SDL_GL_GetProcAddress("glClear");
+    wr_opengl_init();
 
     // The window is open could enter program loop here (see SDL_PollEvent())
     bool stopping = false;
