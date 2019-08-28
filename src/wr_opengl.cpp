@@ -43,30 +43,33 @@ typedef ptrdiff_t GLintptr;
 #define GL_LINK_STATUS                    0x8B82
 #define GL_FLOAT                          0x1406
 #define GL_TRIANGLES                      0x0004
+#define GL_VERSION                        0x1F02
 
 #define WR_GL_LIST \
     /*  ret, name, params */ \
-    GLE(void,   ClearColor,              GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) \
-    GLE(void,   Clear,                   GLbitfield mask) \
-    GLE(void,   GenBuffers,              GLsizei n, GLuint *buffers) \
-    GLE(void,   BindBuffer,              GLenum target, GLuint buffer) \
-    GLE(void,   BufferData,              GLenum target, GLsizeiptr size, const void *data, GLenum usage) \
-    GLE(GLuint, CreateShader,            GLenum type) \
-    GLE(void,   DeleteShader,            GLenum shader) \
-    GLE(void,   ShaderSource,            GLuint shader, GLsizei count, const GLchar *const*string, const GLint *length) \
-    GLE(void,   AttachShader,            GLuint program, GLuint shader) \
-    GLE(void,   GetShaderiv,             GLuint shader, GLenum pname, GLint *params) \
-    GLE(void,   GetShaderInfoLog,        GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog) \
-    GLE(GLuint, CreateProgram,           void) \
-    GLE(void,   LinkProgram,             GLuint program) \
-    GLE(void,   UseProgram,              GLuint program) \
-    GLE(void,   GetProgramiv,            GLuint program, GLenum pname, GLint *params) \
-    GLE(void,   GetProgramInfoLog,       GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog) \
-    GLE(void,   VertexAttribPointer,     GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer) \
-    GLE(void,   EnableVertexAttribArray, GLuint index) \
-    GLE(void,   GenVertexArrays,         GLsizei n, GLuint *arrays) \
-    GLE(void,   BindVertexArray,         GLuint array) \
-    GLE(void,   DrawArrays,              GLenum mode, GLint first, GLsizei count) \
+    GLE(void,      ClearColor,              GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) \
+    GLE(void,      Clear,                   GLbitfield mask) \
+    GLE(void,      GenBuffers,              GLsizei n, GLuint *buffers) \
+    GLE(void,      BindBuffer,              GLenum target, GLuint buffer) \
+    GLE(void,      BufferData,              GLenum target, GLsizeiptr size, const void *data, GLenum usage) \
+    GLE(GLuint,    CreateShader,            GLenum type) \
+    GLE(void,      DeleteShader,            GLenum shader) \
+    GLE(void,      ShaderSource,            GLuint shader, GLsizei count, const GLchar *const*string, const GLint *length) \
+    GLE(void,      CompileShader,           GLuint shader) \
+    GLE(void,      AttachShader,            GLuint program, GLuint shader) \
+    GLE(void,      GetShaderiv,             GLuint shader, GLenum pname, GLint *params) \
+    GLE(void,      GetShaderInfoLog,        GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog) \
+    GLE(GLuint,    CreateProgram,           void) \
+    GLE(void,      LinkProgram,             GLuint program) \
+    GLE(void,      UseProgram,              GLuint program) \
+    GLE(void,      GetProgramiv,            GLuint program, GLenum pname, GLint *params) \
+    GLE(void,      GetProgramInfoLog,       GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog) \
+    GLE(void,      VertexAttribPointer,     GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer) \
+    GLE(void,      EnableVertexAttribArray, GLuint index) \
+    GLE(void,      GenVertexArrays,         GLsizei n, GLuint *arrays) \
+    GLE(void,      BindVertexArray,         GLuint array) \
+    GLE(void,      DrawArrays,              GLenum mode, GLint first, GLsizei count) \
+    GLE(GLubyte *, GetString,               GLenum name) \
     /* end */
 
 #define GLE(ret, name, ...) typedef ret GLAPIENTRY name##Fn(__VA_ARGS__); static name##Fn *gl##name;

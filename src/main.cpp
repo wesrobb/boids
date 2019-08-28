@@ -20,7 +20,7 @@ out vec4 FragColor;
 void main()
 {
     FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-} }
+}
 )glsl";
 
 bool sdl_process_events()
@@ -71,6 +71,59 @@ int main(int argc, char* argv[])
 
     SDL_GLContext gl = SDL_GL_CreateContext(window);
     wr_opengl_init();
+    printf("OpenGL version is (%s)\n", glGetString(GL_VERSION));
+
+#define SHADER_LOG_SIZE 512
+    // Vertex shader
+    GLuint vertexShader;
+    {
+        vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, 1, &vertexShaderSource, 0);
+        glCompileShader(vertexShader);
+        int success;
+        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            char log[SHADER_LOG_SIZE] = {0};
+            glGetShaderInfoLog(vertexShader, SHADER_LOG_SIZE, 0, log);
+            printf("Vertex shader compilation failed: %s\n", log);
+        }
+    }
+
+    // Fragment shader
+    GLuint fragmentShader;
+    {
+        fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, 1, &fragmentShaderSource, 0);
+        glCompileShader(fragmentShader);
+        int success;
+        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            char log[SHADER_LOG_SIZE] = {0};
+            glGetShaderInfoLog(fragmentShader, SHADER_LOG_SIZE, 0, log);
+            printf("Fragment shader compilation failed: %s\n", log);
+        }
+    }
+
+    GLuint shaderProgram;
+    {
+        shaderProgram = glCreateProgram();
+        glAttachShader(shaderProgram, vertexShader);
+        glAttachShader(shaderProgram, fragmentShader);
+        glLinkProgram(shaderProgram);
+        int success;
+        char log[512] = {0};
+        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+        if(!success) {
+            glGetProgramInfoLog(shaderProgram, 512, 0, log);
+            printf("Shader program linking failed: %s\n", log);
+        }
+
+        glUseProgram(shaderProgram);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+    }
 
     // The window is open could enter program loop here (see SDL_PollEvent())
     bool stopping = false;
@@ -78,55 +131,6 @@ int main(int argc, char* argv[])
     {
         stopping = sdl_process_events();
 
-#define SHADER_LOG_SIZE 512
-        // Vertex shader
-        GLuint vertexShader;
-        {
-            vertexShader = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(vertexShader, 1, &vertexShaderSource, 0);
-            int success;
-            glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-            if (!success)
-            {
-                char log[SHADER_LOG_SIZE];
-                glGetShaderInfoLog(vertexShader, SHADER_LOG_SIZE, NULL, log);
-                printf("Vertex shader compilation failed: %s\n", log);
-            }
-        }
-
-        // Fragment shader
-        GLuint fragmentShader;
-        {
-            fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(fragmentShader, 1, &fragmentShaderSource, 0);
-            int success;
-            glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-            if (!success)
-            {
-                char log[SHADER_LOG_SIZE];
-                glGetShaderInfoLog(fragmentShader, SHADER_LOG_SIZE, NULL, log);
-                printf("Fragment shader compilation failed: %s\n", log);
-            }
-        }
-
-        GLuint shaderProgram;
-        {
-            shaderProgram = glCreateProgram();
-            glAttachShader(shaderProgram, vertexShader);
-            glAttachShader(shaderProgram, fragmentShader);
-            glLinkProgram(shaderProgram);
-            int success;
-            char log[512];
-            glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-            if(!success) {
-                glGetProgramInfoLog(shaderProgram, 512, NULL, log);
-                printf("Shader program linking failed: %s\n", log);
-            }
-
-            glUseProgram(shaderProgram);
-            glDeleteShader(vertexShader);
-            glDeleteShader(fragmentShader);
-        }
 
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
