@@ -1,27 +1,41 @@
-#include "SDL.h"
+typedef char           i8;
+typedef short          i16;
+typedef int            i32;
+typedef unsigned char  u8;
+typedef unsigned short u16;
+typedef unsigned int   u32;
+typedef float          f32;
+typedef double         f64;
+
 #include <stdio.h>
+#include "cglm/cglm.h" // Must be included before SDL since SDL won't redefine M_PI. Also brings in stdbool.h
+#include "SDL.h"
 
-#include "wr_opengl.cpp"
+#include "wr_opengl.c"
 
-const char *vertexShaderSource = R"glsl(
-#version 330 core
-layout (location = 0) in vec3 aPos;
+const char *vertexShaderSource = "                               \
+#version 330 core\n                                              \
+layout (location = 0) in vec3 pos;                               \
+                                                                 \
+uniform mat4 model;                                              \
+uniform mat4 view;                                               \
+uniform mat4 projection;                                         \
+                                                                 \
+void main()                                                      \
+{                                                                \
+    gl_Position = projection * view * model * vec4(pos, 1.0);    \
+}                                                                \
+";
 
-void main()
-{
-    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-}
-)glsl";
-
-const char *fragmentShaderSource = R"glsl(
-#version 330 core
-out vec4 FragColor;
-
-void main()
-{
-    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-}
-)glsl";
+const char *fragmentShaderSource = "                             \
+#version 330 core\n                                              \
+out vec4 FragColor;                                              \
+                                                                 \
+void main()                                                      \
+{                                                                \
+    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);                    \
+}                                                                \
+";
 
 bool sdl_process_events()
 {
@@ -43,7 +57,7 @@ bool sdl_process_events()
     return false;
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char ** argv)
 {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -51,13 +65,16 @@ int main(int argc, char* argv[])
 
     SDL_Init(SDL_INIT_EVERYTHING);         // Initialize SDL2
 
+    u32 width = 640;
+    u32 height = 480;
+
     // Create an application window with the following settings:
     SDL_Window *window = SDL_CreateWindow(
         "An SDL2 window",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        640,
-        480,
+        width,
+        height,
         SDL_WINDOW_OPENGL
     );
 
@@ -71,6 +88,7 @@ int main(int argc, char* argv[])
 
     SDL_GLContext gl = SDL_GL_CreateContext(window);
     wr_opengl_init();
+    //glViewport(0, 0, width, height);
     printf("OpenGL version is (%s)\n", glGetString(GL_VERSION));
 
 #define SHADER_LOG_SIZE 512
@@ -125,6 +143,10 @@ int main(int argc, char* argv[])
         glDeleteShader(fragmentShader);
     }
 
+    GLint projectionLocation = glGetUniformLocation(shaderProgram, "projection");
+    GLint viewLocation = glGetUniformLocation(shaderProgram, "view");
+    GLint modelLocation = glGetUniformLocation(shaderProgram, "model");
+
     // The window is open could enter program loop here (see SDL_PollEvent())
     bool stopping = false;
     while (!stopping)
@@ -140,6 +162,20 @@ int main(int argc, char* argv[])
              0.5f, -0.5f, 0.0f,
              0.0f,  0.5f, 0.0f
         };
+        mat4 model;
+        glm_mat4_identity(model);
+        glm_rotate(model, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f}); 
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (GLfloat *)model);
+
+        mat4 view;
+        glm_mat4_identity(view);
+        glm_translate(view, (vec3){0.0f, 0.0f, -3.0f});
+        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (GLfloat *)view);
+
+        mat4 proj;
+        glm_mat4_identity(proj);
+        glm_perspective(glm_rad(45.0f), (f32)width / (f32)height, 0.1f, 100.0f, proj);
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (GLfloat *)proj);
 
         GLuint vao;
         glGenVertexArrays(1, &vao);

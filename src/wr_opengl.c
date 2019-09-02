@@ -70,6 +70,27 @@ typedef ptrdiff_t GLintptr;
     GLE(void,      BindVertexArray,         GLuint array) \
     GLE(void,      DrawArrays,              GLenum mode, GLint first, GLsizei count) \
     GLE(GLubyte *, GetString,               GLenum name) \
+    GLE(GLint,     GetUniformLocation,      GLuint program, const GLchar *name) \
+    GLE(void,      Uniform1f,               GLint location, GLfloat v0) \
+    GLE(void,      Uniform2f,               GLint location, GLfloat v0, GLfloat v1) \
+    GLE(void,      Uniform3f,               GLint location, GLfloat v0, GLfloat v1, GLfloat v2) \
+    GLE(void,      Uniform4f,               GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3) \
+    GLE(void,      Uniform1i,               GLint location, GLint v0) \
+    GLE(void,      Uniform2i,               GLint location, GLint v0, GLint v1) \
+    GLE(void,      Uniform3i,               GLint location, GLint v0, GLint v1, GLint v2) \
+    GLE(void,      Uniform4i,               GLint location, GLint v0, GLint v1, GLint v2, GLint v3) \
+    GLE(void,      Uniform1fv,              GLint location, GLsizei count, const GLfloat *value) \
+    GLE(void,      Uniform2fv,              GLint location, GLsizei count, const GLfloat *value) \
+    GLE(void,      Uniform3fv,              GLint location, GLsizei count, const GLfloat *value) \
+    GLE(void,      Uniform4fv,              GLint location, GLsizei count, const GLfloat *value) \
+    GLE(void,      Uniform1iv,              GLint location, GLsizei count, const GLint *value) \
+    GLE(void,      Uniform2iv,              GLint location, GLsizei count, const GLint *value) \
+    GLE(void,      Uniform3iv,              GLint location, GLsizei count, const GLint *value) \
+    GLE(void,      Uniform4iv,              GLint location, GLsizei count, const GLint *value) \
+    GLE(void,      UniformMatrix2fv,        GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) \
+    GLE(void,      UniformMatrix3fv,        GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) \
+    GLE(void,      UniformMatrix4fv,        GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) \
+    GLE(void,      Viewport,                GLint x, GLint y, GLsizei width, GLsizei height) \
     /* end */
 
 #define GLE(ret, name, ...) typedef ret GLAPIENTRY name##Fn(__VA_ARGS__); static name##Fn *gl##name;
