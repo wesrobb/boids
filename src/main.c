@@ -59,6 +59,64 @@ bool sdl_process_events()
     return false;
 }
 
+GLuint CreateVertexShader(const char* shaderSource)
+{
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &shaderSource, 0);
+    glCompileShader(vertexShader);
+    int success;
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        char log[512] = {0};
+        glGetShaderInfoLog(vertexShader, 512, 0, log);
+        printf("Vertex shader compilation failed: %s\n", log);
+        exit(1);
+    }
+
+    return vertexShader;
+}
+
+GLuint CreateFragmentShader(const char* shaderSource)
+{
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &shaderSource, 0);
+    glCompileShader(fragmentShader);
+    int success;
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        char log[512] = {0};
+        glGetShaderInfoLog(fragmentShader, 512, 0, log);
+        printf("Fragment shader compilation failed: %s\n", log);
+        exit(1);
+    }
+
+    return fragmentShader;
+}
+
+GLuint CreateShaderProgram(GLuint vertexShader, GLuint fragmentShader)
+{
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    int success;
+    char log[512] = {0};
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if(!success) {
+        glGetProgramInfoLog(shaderProgram, 512, 0, log);
+        printf("Shader program linking failed: %s\n", log);
+        exit(1);
+    }
+
+    glUseProgram(shaderProgram);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return shaderProgram;
+}
+
 int main(int argc, char ** argv)
 {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -90,62 +148,13 @@ int main(int argc, char ** argv)
 
     SDL_GLContext gl = SDL_GL_CreateContext(window);
     wr_opengl_init();
-    //glViewport(0, 0, width, height);
     printf("OpenGL version is (%s)\n", glGetString(GL_VERSION));
 
     glEnable(GL_DEPTH_TEST);
 
-#define SHADER_LOG_SIZE 512
-    // Vertex shader
-    GLuint vertexShader;
-    {
-        vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &vertexShaderSource, 0);
-        glCompileShader(vertexShader);
-        int success;
-        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-            char log[SHADER_LOG_SIZE] = {0};
-            glGetShaderInfoLog(vertexShader, SHADER_LOG_SIZE, 0, log);
-            printf("Vertex shader compilation failed: %s\n", log);
-        }
-    }
-
-    // Fragment shader
-    GLuint fragmentShader;
-    {
-        fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, 1, &fragmentShaderSource, 0);
-        glCompileShader(fragmentShader);
-        int success;
-        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-            char log[SHADER_LOG_SIZE] = {0};
-            glGetShaderInfoLog(fragmentShader, SHADER_LOG_SIZE, 0, log);
-            printf("Fragment shader compilation failed: %s\n", log);
-        }
-    }
-
-    GLuint shaderProgram;
-    {
-        shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
-        glLinkProgram(shaderProgram);
-        int success;
-        char log[512] = {0};
-        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-        if(!success) {
-            glGetProgramInfoLog(shaderProgram, 512, 0, log);
-            printf("Shader program linking failed: %s\n", log);
-        }
-
-        glUseProgram(shaderProgram);
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-    }
+    GLuint vertexShader = CreateVertexShader(vertexShaderSource);
+    GLuint fragmentShader = CreateFragmentShader(fragmentShaderSource);
+    GLuint shaderProgram = CreateShaderProgram(vertexShader, fragmentShader);
 
     GLint projectionLocation = glGetUniformLocation(shaderProgram, "projection");
     GLint viewLocation = glGetUniformLocation(shaderProgram, "view");
@@ -153,26 +162,38 @@ int main(int argc, char ** argv)
 
     u64 now = SDL_GetPerformanceCounter();
     u64 last = 0;
+    f32 dtTotal = 0.0f;
+    u32 frameCounter = 0;
 
     f32 camX = 0.0f, camZ = 0.0f;
+
+    f32 vertices[] = {
+        -0.5f, -0.5f, 0.0f,
+         0.5f, -0.5f, 0.0f,
+         0.0f,  0.5f, 0.0f
+    };
 
     bool stopping = false;
     while (!stopping)
     {
+        frameCounter++;
         last = now;
         now = SDL_GetPerformanceCounter();
         f32 dt = ((now - last)*1000 / (f32)SDL_GetPerformanceFrequency());
+        dtTotal += dt;
+        if (dtTotal > 1000.0f)
+        {
+            printf("Avg frame time %f\n", dtTotal / (f32)frameCounter);
+            printf("Avg fps %d\n", frameCounter);
+            dtTotal = 0.0f;
+            frameCounter = 0;
+        }
 
         stopping = sdl_process_events();
 
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        float vertices[] = {
-            -0.5f, -0.5f, 0.0f,
-             0.5f, -0.5f, 0.0f,
-             0.0f,  0.5f, 0.0f
-        };
         mat4 model;
         glm_mat4_identity(model);
         glm_rotate(model, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
