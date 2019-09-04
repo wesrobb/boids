@@ -1,11 +1,13 @@
-typedef char           i8;
-typedef short          i16;
-typedef int            i32;
-typedef unsigned char  u8;
-typedef unsigned short u16;
-typedef unsigned int   u32;
-typedef float          f32;
-typedef double         f64;
+typedef char               i8;
+typedef short              i16;
+typedef int                i32;
+typedef long long          i64;
+typedef unsigned char      u8;
+typedef unsigned short     u16;
+typedef unsigned int       u32;
+typedef unsigned long long u64;
+typedef float              f32;
+typedef double             f64;
 
 #include <stdio.h>
 #include "cglm/cglm.h" // Must be included before SDL since SDL won't redefine M_PI. Also brings in stdbool.h
@@ -91,6 +93,8 @@ int main(int argc, char ** argv)
     //glViewport(0, 0, width, height);
     printf("OpenGL version is (%s)\n", glGetString(GL_VERSION));
 
+    glEnable(GL_DEPTH_TEST);
+
 #define SHADER_LOG_SIZE 512
     // Vertex shader
     GLuint vertexShader;
@@ -147,15 +151,22 @@ int main(int argc, char ** argv)
     GLint viewLocation = glGetUniformLocation(shaderProgram, "view");
     GLint modelLocation = glGetUniformLocation(shaderProgram, "model");
 
-    // The window is open could enter program loop here (see SDL_PollEvent())
+    u64 now = SDL_GetPerformanceCounter();
+    u64 last = 0;
+
+    f32 camX = 0.0f, camZ = 0.0f;
+
     bool stopping = false;
     while (!stopping)
     {
+        last = now;
+        now = SDL_GetPerformanceCounter();
+        f32 dt = ((now - last)*1000 / (f32)SDL_GetPerformanceFrequency());
+
         stopping = sdl_process_events();
 
-
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         float vertices[] = {
             -0.5f, -0.5f, 0.0f,
@@ -164,16 +175,21 @@ int main(int argc, char ** argv)
         };
         mat4 model;
         glm_mat4_identity(model);
-        glm_rotate(model, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f}); 
+        glm_rotate(model, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
         glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (GLfloat *)model);
 
+        f32 radius = 10.0f;
+        camX = sinf((f32)SDL_GetTicks() / 1000.0f) * radius;
+        camZ = cosf((f32)SDL_GetTicks() / 1000.0f) * radius;
+
         mat4 view;
-        glm_mat4_identity(view);
-        glm_translate(view, (vec3){0.0f, 0.0f, -3.0f});
+        glm_lookat((vec3){camX, 0.0f, camZ},
+                   (vec3){0.0f, 0.0f, 0.0f},
+                   (vec3){0.0f, 1.0f, 0.0f},
+                   view);
         glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (GLfloat *)view);
 
         mat4 proj;
-        glm_mat4_identity(proj);
         glm_perspective(glm_rad(45.0f), (f32)width / (f32)height, 0.1f, 100.0f, proj);
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (GLfloat *)proj);
 
