@@ -18,6 +18,9 @@ typedef double             f64;
 const char *vertexShaderSource = "                               \
 #version 330 core\n                                              \
 layout (location = 0) in vec3 pos;                               \
+layout (location = 1) in vec3 color;                             \
+                                                                 \
+out vec4 vertexColor;                                            \
                                                                  \
 uniform mat4 model;                                              \
 uniform mat4 view;                                               \
@@ -25,6 +28,7 @@ uniform mat4 projection;                                         \
                                                                  \
 void main()                                                      \
 {                                                                \
+    vertexColor = vec4(color, 1.0f);                             \
     gl_Position = projection * view * model * vec4(pos, 1.0);    \
 }                                                                \
 ";
@@ -33,9 +37,11 @@ const char *fragmentShaderSource = "                             \
 #version 330 core\n                                              \
 out vec4 FragColor;                                              \
                                                                  \
+in vec4 vertexColor;                                             \
+                                                                 \
 void main()                                                      \
 {                                                                \
-    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);                    \
+    FragColor = vertexColor;                                     \
 }                                                                \
 ";
 
@@ -167,15 +173,53 @@ int main(int argc, char ** argv)
 
     f32 camX = 0.0f, camZ = 0.0f;
 
-    f32 vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
+    f32 pyramidVertices[] = {
+         0.0f, 1.0f, 0.0f,
+        -1.0f,-1.0f, 1.0f,
+         1.0f,-1.0f, 1.0f,
+         0.0f, 1.0f, 0.0f,
+         1.0f,-1.0f, 1.0f,
+         1.0f,-1.0f,-1.0f,
+         0.0f, 1.0f, 0.0f,
+         1.0f,-1.0f,-1.0f,
+        -1.0f,-1.0f,-1.0f,
+         0.0f, 1.0f, 0.0f,
+        -1.0f,-1.0f,-1.0f,
+        -1.0f,-1.0f, 1.0f,
+        -1.0f,-1.0f, 1.0f,
+        -1.0f,-1.0f,-1.0f,
+         1.0f,-1.0f,-1.0f,
+        -1.0f,-1.0f, 1.0f,
+         1.0f,-1.0f,-1.0f,
+         1.0f,-1.0f, 1.0f,
+    };
+
+    f32 pyramidColors[] = {
+        1.0f,0.0f,0.0f,
+        0.0f,1.0f,0.0f,
+        0.0f,0.0f,1.0f,
+        1.0f,0.0f,0.0f,
+        0.0f,0.0f,1.0f,
+        0.0f,1.0f,0.0f,
+        1.0f,0.0f,0.0f,
+        0.0f,1.0f,0.0f,
+        0.0f,0.0f,1.0f,
+        1.0f,0.0f,0.0f,
+        0.0f,0.0f,1.0f,
+        0.0f,1.0f,0.0f,
+        1.0f,0.0f,0.0f,
+        0.0f,1.0f,0.0f,
+        0.0f,0.0f,1.0f,
+        1.0f,0.0f,0.0f,
+        0.0f,0.0f,1.0f,
+        0.0f,1.0f,0.0f,
     };
 
     bool stopping = false;
     while (!stopping)
     {
+        stopping = sdl_process_events();
+
         frameCounter++;
         last = now;
         now = SDL_GetPerformanceCounter();
@@ -188,8 +232,6 @@ int main(int argc, char ** argv)
             dtTotal = 0.0f;
             frameCounter = 0;
         }
-
-        stopping = sdl_process_events();
 
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -218,16 +260,23 @@ int main(int argc, char ** argv)
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
-        GLuint vbo;
-        glGenBuffers(1, &vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        GLuint vertexBuffer;
+        glGenBuffers(1, &vertexBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidVertices), pyramidVertices, GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        GLuint colorBuffer;
+        glGenBuffers(1, &colorBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidColors), pyramidColors, GL_STATIC_DRAW);
 
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+
+        glDrawArrays(GL_TRIANGLES, 0, 18);
 
         SDL_GL_SwapWindow(window);
     }

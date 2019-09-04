@@ -44,6 +44,7 @@ typedef ptrdiff_t GLintptr;
 #define GL_LINK_STATUS                    0x8B82
 #define GL_FLOAT                          0x1406
 #define GL_TRIANGLES                      0x0004
+#define GL_TRIANGLE_FAN                   0x0006
 #define GL_VERSION                        0x1F02
 #define GL_DEPTH_TEST                     0x0B71
 
