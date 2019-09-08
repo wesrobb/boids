@@ -140,7 +140,6 @@ GLuint CreateShaderProgram(GLuint vertexShader, GLuint fragmentShader)
         exit(1);
     }
 
-    glUseProgram(shaderProgram);
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
@@ -184,13 +183,30 @@ int main(int argc, char ** argv)
 
     glEnable(GL_DEPTH_TEST);
 
-    GLuint vertexShader = CreateVertexShader("vertex.glsl");
-    GLuint fragmentShader = CreateFragmentShader("fragment.glsl");
-    GLuint shaderProgram = CreateShaderProgram(vertexShader, fragmentShader);
+    vec3 objectColor = { 0.5f, 0.8f, 0.2f };
+    vec3 lightColor = { 1.0f, 1.0f, 1.0f };
 
-    GLint projectionLocation = glGetUniformLocation(shaderProgram, "projection");
-    GLint viewLocation = glGetUniformLocation(shaderProgram, "view");
-    GLint modelLocation = glGetUniformLocation(shaderProgram, "model");
+    GLuint objectVertexShader = CreateVertexShader("objects.v.glsl");
+    GLuint objectFragmentShader = CreateFragmentShader("objects.f.glsl");
+    GLuint objectShaderProgram = CreateShaderProgram(objectVertexShader, objectFragmentShader);
+    glUseProgram(objectShaderProgram);
+    GLint objectProjectionLocation = glGetUniformLocation(objectShaderProgram, "projection");
+    GLint objectViewLocation = glGetUniformLocation(objectShaderProgram, "view");
+    GLint objectModelLocation = glGetUniformLocation(objectShaderProgram, "model");
+    GLint objectColorLocation = glGetUniformLocation(objectShaderProgram, "color");
+    GLint objectLightColorLocation = glGetUniformLocation(objectShaderProgram, "lightColor");
+    glUniform3fv(objectColorLocation, 1, objectColor);
+    glUniform3fv(objectLightColorLocation, 1, lightColor);
+
+    GLuint lightVertexShader = CreateVertexShader("lights.v.glsl");
+    GLuint lightFragmentShader = CreateFragmentShader("lights.f.glsl");
+    GLuint lightShaderProgram = CreateShaderProgram(lightVertexShader, lightFragmentShader);
+    glUseProgram(lightShaderProgram);
+    GLint lightProjectionLocation = glGetUniformLocation(lightShaderProgram, "projection");
+    GLint lightViewLocation = glGetUniformLocation(lightShaderProgram, "view");
+    GLint lightModelLocation = glGetUniformLocation(lightShaderProgram, "model");
+    GLint lightColorLocation = glGetUniformLocation(lightShaderProgram, "color");
+    glUniform3fv(lightColorLocation, 1, lightColor);
 
     f32 camX = 0.0f, camZ = 0.0f;
 
@@ -214,6 +230,27 @@ int main(int argc, char ** argv)
          1.0f,-1.0f,-1.0f,
          1.0f,-1.0f, 1.0f,
     };
+
+    GLuint pyramidVao;
+    glGenVertexArrays(1, &pyramidVao);
+    glBindVertexArray(pyramidVao);
+
+    GLuint pyramidVertexBuffer;
+    glGenBuffers(1, &pyramidVertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, pyramidVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidVertices), pyramidVertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    GLuint lightVao;
+    glGenVertexArrays(1, &lightVao);
+    glBindVertexArray(lightVao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, pyramidVertexBuffer);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
     u64 now = SDL_GetPerformanceCounter();
     u64 last = 0;
@@ -241,38 +278,43 @@ int main(int argc, char ** argv)
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        mat4 model;
-        glm_mat4_identity(model);
-        glm_rotate(model, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (GLfloat *)model);
+        glUseProgram(objectShaderProgram);
+        mat4 objectModel;
+        glm_mat4_identity(objectModel);
+        glm_rotate(objectModel, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
+        glUniformMatrix4fv(objectModelLocation, 1, GL_FALSE, (GLfloat *)objectModel);
 
         f32 radius = 10.0f;
-        camX = sinf((f32)SDL_GetTicks() / 1000.0f) * radius;
-        camZ = cosf((f32)SDL_GetTicks() / 1000.0f) * radius;
+        camX = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
+        camZ = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
 
         mat4 view;
         glm_lookat((vec3){camX, 0.0f, camZ},
                    (vec3){0.0f, 0.0f, 0.0f},
                    (vec3){0.0f, 1.0f, 0.0f},
                    view);
-        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (GLfloat *)view);
+        glUniformMatrix4fv(objectViewLocation, 1, GL_FALSE, (GLfloat *)view);
 
         mat4 proj;
         glm_perspective(glm_rad(45.0f), (f32)width / (f32)height, 0.1f, 100.0f, proj);
-        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (GLfloat *)proj);
+        glUniformMatrix4fv(objectProjectionLocation, 1, GL_FALSE, (GLfloat *)proj);
 
-        GLuint vao;
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
+        glUseProgram(objectShaderProgram);
+        glBindVertexArray(pyramidVao);
+        glDrawArrays(GL_TRIANGLES, 0, 18);
 
-        GLuint vertexBuffer;
-        glGenBuffers(1, &vertexBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidVertices), pyramidVertices, GL_STATIC_DRAW);
+        glUseProgram(lightShaderProgram);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
+        mat4 lightModel;
+        glm_mat4_identity(lightModel);
+        glm_translate(lightModel, (vec3){1.2f, 1.0f, 2.0f});
+        glm_scale(lightModel, (vec3){0.2f, 0.2f, 0.2f});
+        glUniformMatrix4fv(lightModelLocation, 1, GL_FALSE, (GLfloat *)lightModel);
 
+        glUniformMatrix4fv(lightViewLocation, 1, GL_FALSE, (GLfloat *)view);
+        glUniformMatrix4fv(lightProjectionLocation, 1, GL_FALSE, (GLfloat *)proj);
+
+        glBindVertexArray(lightVao);
         glDrawArrays(GL_TRIANGLES, 0, 18);
 
         SDL_GL_SwapWindow(window);

@@ -12,8 +12,7 @@ pushd debug
 REM Debug build
 cl -Od %CommonCompilerFlags% ../../src/main.c /link -subsystem:console %CommonLinkerFlags%
 
-COPY /Y ..\..\data\shaders\vertex.glsl .
-COPY /Y ..\..\data\shaders\fragment.glsl .
+COPY /Y ..\..\data\shaders\*.glsl .
 
 popd
 
