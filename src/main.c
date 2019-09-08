@@ -10,42 +10,15 @@ typedef float              f32;
 typedef double             f64;
 
 #include <stdio.h>
+#include <string.h>
 #include "cglm/cglm.h" // Must be included before SDL since SDL won't redefine M_PI. Also brings in stdbool.h
 #include "SDL.h"
 
 #include "wr_opengl.c"
 
-const char *vertexShaderSource = "                               \
-#version 330 core\n                                              \
-layout (location = 0) in vec3 pos;                               \
-layout (location = 1) in vec3 color;                             \
-                                                                 \
-out vec4 vertexColor;                                            \
-                                                                 \
-uniform mat4 model;                                              \
-uniform mat4 view;                                               \
-uniform mat4 projection;                                         \
-                                                                 \
-void main()                                                      \
-{                                                                \
-    vertexColor = vec4(color, 1.0f);                             \
-    gl_Position = projection * view * model * vec4(pos, 1.0);    \
-}                                                                \
-";
+static char *g_BasePath;
 
-const char *fragmentShaderSource = "                             \
-#version 330 core\n                                              \
-out vec4 FragColor;                                              \
-                                                                 \
-in vec4 vertexColor;                                             \
-                                                                 \
-void main()                                                      \
-{                                                                \
-    FragColor = vertexColor;                                     \
-}                                                                \
-";
-
-bool sdl_process_events()
+bool SdlProcessEvents()
 {
     SDL_Event event;
     while (SDL_PollEvent(&event))
@@ -65,10 +38,48 @@ bool sdl_process_events()
     return false;
 }
 
-GLuint CreateVertexShader(const char* shaderSource)
+bool SdlFileRead(const char *filePath, char *buffer, u32 bufferSize)
 {
+    SDL_RWops *rw = SDL_RWFromFile(filePath, "rb");
+    if (!rw)
+    {
+        return false;
+    }
+
+    i64 fileSize = SDL_RWsize(rw);
+    if (fileSize + 1 > bufferSize)
+    {
+        return false;
+    }
+
+    i64 totalBytesRead = 0;
+    i64 bytesRead = 1;
+    while (totalBytesRead < fileSize && bytesRead != 0)
+    {
+        bytesRead = SDL_RWread(rw, buffer, 1, fileSize - totalBytesRead);
+        totalBytesRead += bytesRead;
+        buffer += bytesRead;
+    }
+
+    SDL_RWclose(rw);
+    if (totalBytesRead != fileSize)
+    {
+        return false;
+    }
+
+    buffer[totalBytesRead] = 0;
+    return true;
+}
+
+GLuint CreateVertexShader(const char* shaderPath)
+{
+    char vertexShaderSource[2048] = {0};
+    SdlFileRead(shaderPath, vertexShaderSource, 2048);
+
+    const char *src = vertexShaderSource;
+
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &shaderSource, 0);
+    glShaderSource(vertexShader, 1, &src, 0);
     glCompileShader(vertexShader);
     int success;
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
@@ -83,10 +94,15 @@ GLuint CreateVertexShader(const char* shaderSource)
     return vertexShader;
 }
 
-GLuint CreateFragmentShader(const char* shaderSource)
+GLuint CreateFragmentShader(const char* shaderPath)
 {
+    char fragmentShaderSource[2048] = {0};
+    SdlFileRead(shaderPath, fragmentShaderSource, 2048);
+
+    const char *src = fragmentShaderSource;
+
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &shaderSource, 0);
+    glShaderSource(fragmentShader, 1, &src, 0);
     glCompileShader(fragmentShader);
     int success;
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
@@ -131,6 +147,8 @@ int main(int argc, char ** argv)
 
     SDL_Init(SDL_INIT_EVERYTHING);         // Initialize SDL2
 
+    g_BasePath = SDL_GetBasePath();
+
     u32 width = 640;
     u32 height = 480;
 
@@ -158,8 +176,16 @@ int main(int argc, char ** argv)
 
     glEnable(GL_DEPTH_TEST);
 
-    GLuint vertexShader = CreateVertexShader(vertexShaderSource);
-    GLuint fragmentShader = CreateFragmentShader(fragmentShaderSource);
+    char vertexShaderPath[512];
+    strcpy_s(vertexShaderPath, 512, g_BasePath);
+    strcat_s(vertexShaderPath, 512, "vertex.glsl");
+    GLuint vertexShader = CreateVertexShader(vertexShaderPath);
+
+    char fragmentShaderPath[512];
+    strcpy_s(fragmentShaderPath, 512, g_BasePath);
+    strcat_s(fragmentShaderPath, 512, "fragment.glsl");
+    GLuint fragmentShader = CreateFragmentShader(fragmentShaderPath);
+
     GLuint shaderProgram = CreateShaderProgram(vertexShader, fragmentShader);
 
     GLint projectionLocation = glGetUniformLocation(shaderProgram, "projection");
@@ -218,7 +244,7 @@ int main(int argc, char ** argv)
     bool stopping = false;
     while (!stopping)
     {
-        stopping = sdl_process_events();
+        stopping = SdlProcessEvents();
 
         frameCounter++;
         last = now;
