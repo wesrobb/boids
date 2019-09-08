@@ -192,11 +192,6 @@ int main(int argc, char ** argv)
     GLint viewLocation = glGetUniformLocation(shaderProgram, "view");
     GLint modelLocation = glGetUniformLocation(shaderProgram, "model");
 
-    u64 now = SDL_GetPerformanceCounter();
-    u64 last = 0;
-    f32 dtTotal = 0.0f;
-    u32 frameCounter = 0;
-
     f32 camX = 0.0f, camZ = 0.0f;
 
     f32 pyramidVertices[] = {
@@ -220,26 +215,10 @@ int main(int argc, char ** argv)
          1.0f,-1.0f, 1.0f,
     };
 
-    f32 pyramidColors[] = {
-        1.0f,0.0f,0.0f,
-        0.0f,1.0f,0.0f,
-        0.0f,0.0f,1.0f,
-        1.0f,0.0f,0.0f,
-        0.0f,0.0f,1.0f,
-        0.0f,1.0f,0.0f,
-        1.0f,0.0f,0.0f,
-        0.0f,1.0f,0.0f,
-        0.0f,0.0f,1.0f,
-        1.0f,0.0f,0.0f,
-        0.0f,0.0f,1.0f,
-        0.0f,1.0f,0.0f,
-        1.0f,0.0f,0.0f,
-        0.0f,1.0f,0.0f,
-        0.0f,0.0f,1.0f,
-        1.0f,0.0f,0.0f,
-        0.0f,0.0f,1.0f,
-        0.0f,1.0f,0.0f,
-    };
+    u64 now = SDL_GetPerformanceCounter();
+    u64 last = 0;
+    f32 dtTotal = 0.0f;
+    u32 frameCounter = 0;
 
     bool stopping = false;
     while (!stopping)
@@ -293,14 +272,6 @@ int main(int argc, char ** argv)
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
-
-        GLuint colorBuffer;
-        glGenBuffers(1, &colorBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidColors), pyramidColors, GL_STATIC_DRAW);
-
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
 
         glDrawArrays(GL_TRIANGLES, 0, 18);
 
