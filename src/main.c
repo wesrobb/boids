@@ -38,7 +38,7 @@ bool SdlProcessEvents()
     return false;
 }
 
-bool SdlFileRead(const char *filePath, char *buffer, u32 bufferSize)
+bool SdlReadFile(const char *filePath, char *buffer, u32 bufferSize)
 {
     SDL_RWops *rw = SDL_RWFromFile(filePath, "rb");
     if (!rw)
@@ -71,10 +71,14 @@ bool SdlFileRead(const char *filePath, char *buffer, u32 bufferSize)
     return true;
 }
 
-GLuint CreateVertexShader(const char* shaderPath)
+GLuint CreateVertexShader(const char* vertexShaderFileName)
 {
+    char vertexShaderPath[512] = {0};
+    strcpy_s(vertexShaderPath, 512, g_BasePath);
+    strcat_s(vertexShaderPath, 512, vertexShaderFileName);
+
     char vertexShaderSource[2048] = {0};
-    SdlFileRead(shaderPath, vertexShaderSource, 2048);
+    SdlReadFile(vertexShaderPath, vertexShaderSource, 2048);
 
     const char *src = vertexShaderSource;
 
@@ -94,10 +98,14 @@ GLuint CreateVertexShader(const char* shaderPath)
     return vertexShader;
 }
 
-GLuint CreateFragmentShader(const char* shaderPath)
+GLuint CreateFragmentShader(const char* fragmentShaderFileName)
 {
+    char fragmentShaderPath[512] = {0};
+    strcpy_s(fragmentShaderPath, 512, g_BasePath);
+    strcat_s(fragmentShaderPath, 512, fragmentShaderFileName);
+
     char fragmentShaderSource[2048] = {0};
-    SdlFileRead(shaderPath, fragmentShaderSource, 2048);
+    SdlReadFile(fragmentShaderPath, fragmentShaderSource, 2048);
 
     const char *src = fragmentShaderSource;
 
@@ -176,16 +184,8 @@ int main(int argc, char ** argv)
 
     glEnable(GL_DEPTH_TEST);
 
-    char vertexShaderPath[512];
-    strcpy_s(vertexShaderPath, 512, g_BasePath);
-    strcat_s(vertexShaderPath, 512, "vertex.glsl");
-    GLuint vertexShader = CreateVertexShader(vertexShaderPath);
-
-    char fragmentShaderPath[512];
-    strcpy_s(fragmentShaderPath, 512, g_BasePath);
-    strcat_s(fragmentShaderPath, 512, "fragment.glsl");
-    GLuint fragmentShader = CreateFragmentShader(fragmentShaderPath);
-
+    GLuint vertexShader = CreateVertexShader("vertex.glsl");
+    GLuint fragmentShader = CreateFragmentShader("fragment.glsl");
     GLuint shaderProgram = CreateShaderProgram(vertexShader, fragmentShader);
 
     GLint projectionLocation = glGetUniformLocation(shaderProgram, "projection");
