@@ -9,8 +9,9 @@ typedef unsigned long long u64;
 typedef float              f32;
 typedef double             f64;
 
+#include "shaders.c" // This must be included before SDL.h because SDL redefines main and main is used in GLSL
+
 #include <stdio.h>
-#include <string.h>
 #include "cglm/cglm.h" // Must be included before SDL since SDL won't redefine M_PI. Also brings in stdbool.h
 #include "SDL.h"
 
@@ -71,19 +72,10 @@ bool SdlReadFile(const char *filePath, char *buffer, u32 bufferSize)
     return true;
 }
 
-GLuint CreateVertexShader(const char* vertexShaderFileName)
+GLuint CreateVertexShader(const char* vertexShaderSource)
 {
-    char vertexShaderPath[512] = {0};
-    strcpy_s(vertexShaderPath, 512, g_BasePath);
-    strcat_s(vertexShaderPath, 512, vertexShaderFileName);
-
-    char vertexShaderSource[2048] = {0};
-    SdlReadFile(vertexShaderPath, vertexShaderSource, 2048);
-
-    const char *src = vertexShaderSource;
-
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &src, 0);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, 0);
     glCompileShader(vertexShader);
     int success;
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
@@ -98,19 +90,10 @@ GLuint CreateVertexShader(const char* vertexShaderFileName)
     return vertexShader;
 }
 
-GLuint CreateFragmentShader(const char* fragmentShaderFileName)
+GLuint CreateFragmentShader(const char* fragmentShaderSource)
 {
-    char fragmentShaderPath[512] = {0};
-    strcpy_s(fragmentShaderPath, 512, g_BasePath);
-    strcat_s(fragmentShaderPath, 512, fragmentShaderFileName);
-
-    char fragmentShaderSource[2048] = {0};
-    SdlReadFile(fragmentShaderPath, fragmentShaderSource, 2048);
-
-    const char *src = fragmentShaderSource;
-
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &src, 0);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, 0);
     glCompileShader(fragmentShader);
     int success;
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
@@ -146,7 +129,7 @@ GLuint CreateShaderProgram(GLuint vertexShader, GLuint fragmentShader)
     return shaderProgram;
 }
 
-int main(int argc, char ** argv)
+int SDL_main(int argc, char ** argv)
 {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -186,8 +169,8 @@ int main(int argc, char ** argv)
     vec3 objectColor = { 0.5f, 0.8f, 0.2f };
     vec3 lightColor = { 1.0f, 1.0f, 1.0f };
 
-    GLuint objectVertexShader = CreateVertexShader("objects.v.glsl");
-    GLuint objectFragmentShader = CreateFragmentShader("objects.f.glsl");
+    GLuint objectVertexShader = CreateVertexShader(VERTEX_SHADER_PYRAMID);
+    GLuint objectFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_PYRAMID);
     GLuint objectShaderProgram = CreateShaderProgram(objectVertexShader, objectFragmentShader);
     glUseProgram(objectShaderProgram);
     GLint objectProjectionLocation = glGetUniformLocation(objectShaderProgram, "projection");
@@ -198,8 +181,8 @@ int main(int argc, char ** argv)
     glUniform3fv(objectColorLocation, 1, objectColor);
     glUniform3fv(objectLightColorLocation, 1, lightColor);
 
-    GLuint lightVertexShader = CreateVertexShader("lights.v.glsl");
-    GLuint lightFragmentShader = CreateFragmentShader("lights.f.glsl");
+    GLuint lightVertexShader = CreateVertexShader(VERTEX_SHADER_LIGHT);
+    GLuint lightFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_LIGHT);
     GLuint lightShaderProgram = CreateShaderProgram(lightVertexShader, lightFragmentShader);
     glUseProgram(lightShaderProgram);
     GLint lightProjectionLocation = glGetUniformLocation(lightShaderProgram, "projection");
