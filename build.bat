@@ -12,8 +12,6 @@ pushd debug
 REM Debug build
 cl -Od %CommonCompilerFlags% ../../src/main.c /link -subsystem:console %CommonLinkerFlags%
 
-COPY /Y ..\..\data\shaders\*.glsl .
-
 popd
 
 popd

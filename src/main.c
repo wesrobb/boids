@@ -19,6 +19,8 @@ typedef double             f64;
 
 static char *g_BasePath;
 
+#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
+
 bool SdlProcessEvents()
 {
     SDL_Event event;
@@ -129,6 +131,33 @@ GLuint CreateShaderProgram(GLuint vertexShader, GLuint fragmentShader)
     return shaderProgram;
 }
 
+void CalculateNormals(vec3 *vertices, u32 verticesCount, vec3 *normals, u32 normalsCount)
+{
+    SDL_assert(vertices);
+    SDL_assert(normals);
+    SDL_assert(verticesCount % 3 == 0);
+    SDL_assert(normalsCount == verticesCount);
+
+    u32 normalIndex = 0;
+    vec3 u, v, cross;
+    for (u32 i = 0; i < verticesCount; i+=3)
+    {
+        vec3 *x = &vertices[i];
+        vec3 *y = &vertices[i+1];
+        vec3 *z = &vertices[i+2];
+
+        glm_vec3_sub(*x, *y, u);
+        glm_vec3_sub(*x, *z, v);
+        glm_vec3_cross(u, v, cross);
+        glm_vec3_normalize(cross);
+
+        // Store a normal for each of the vertices
+        glm_vec3_copy(cross, normals[normalIndex++]);
+        glm_vec3_copy(cross, normals[normalIndex++]);
+        glm_vec3_copy(cross, normals[normalIndex++]);
+    }
+}
+
 int SDL_main(int argc, char ** argv)
 {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -168,6 +197,7 @@ int SDL_main(int argc, char ** argv)
 
     vec3 objectColor = { 0.5f, 0.8f, 0.2f };
     vec3 lightColor = { 1.0f, 1.0f, 1.0f };
+    vec3 lightPos = {3.2f, 3.0f, 3.0f};
 
     GLuint objectVertexShader = CreateVertexShader(VERTEX_SHADER_PYRAMID);
     GLuint objectFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_PYRAMID);
@@ -178,8 +208,10 @@ int SDL_main(int argc, char ** argv)
     GLint objectModelLocation = glGetUniformLocation(objectShaderProgram, "model");
     GLint objectColorLocation = glGetUniformLocation(objectShaderProgram, "color");
     GLint objectLightColorLocation = glGetUniformLocation(objectShaderProgram, "lightColor");
+    GLint lightPosLocation = glGetUniformLocation(objectShaderProgram, "lightPos");
     glUniform3fv(objectColorLocation, 1, objectColor);
     glUniform3fv(objectLightColorLocation, 1, lightColor);
+    glUniform3fv(lightPosLocation, 1, lightPos);
 
     GLuint lightVertexShader = CreateVertexShader(VERTEX_SHADER_LIGHT);
     GLuint lightFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_LIGHT);
@@ -193,26 +225,30 @@ int SDL_main(int argc, char ** argv)
 
     f32 camX = 0.0f, camZ = 0.0f;
 
-    f32 pyramidVertices[] = {
-         0.0f, 1.0f, 0.0f,
-        -1.0f,-1.0f, 1.0f,
-         1.0f,-1.0f, 1.0f,
-         0.0f, 1.0f, 0.0f,
-         1.0f,-1.0f, 1.0f,
-         1.0f,-1.0f,-1.0f,
-         0.0f, 1.0f, 0.0f,
-         1.0f,-1.0f,-1.0f,
-        -1.0f,-1.0f,-1.0f,
-         0.0f, 1.0f, 0.0f,
-        -1.0f,-1.0f,-1.0f,
-        -1.0f,-1.0f, 1.0f,
-        -1.0f,-1.0f, 1.0f,
-        -1.0f,-1.0f,-1.0f,
-         1.0f,-1.0f,-1.0f,
-        -1.0f,-1.0f, 1.0f,
-         1.0f,-1.0f,-1.0f,
-         1.0f,-1.0f, 1.0f,
+    vec3 pyramidVertices[] = {
+        { 0.0f, 1.0f, 0.0f},
+        {-1.0f,-1.0f, 1.0f},
+        { 1.0f,-1.0f, 1.0f},
+        { 0.0f, 1.0f, 0.0f},
+        { 1.0f,-1.0f, 1.0f},
+        { 1.0f,-1.0f,-1.0f},
+        { 0.0f, 1.0f, 0.0f},
+        { 1.0f,-1.0f,-1.0f},
+        {-1.0f,-1.0f,-1.0f},
+        { 0.0f, 1.0f, 0.0f},
+        {-1.0f,-1.0f,-1.0f},
+        {-1.0f,-1.0f, 1.0f},
+        {-1.0f,-1.0f, 1.0f},
+        {-1.0f,-1.0f,-1.0f},
+        { 1.0f,-1.0f,-1.0f},
+        {-1.0f,-1.0f, 1.0f},
+        { 1.0f,-1.0f,-1.0f},
+        { 1.0f,-1.0f, 1.0f},
     };
+
+    const u32 normalsCount = ARRAY_SIZE(pyramidVertices);
+    vec3 pyramidNormals[ARRAY_SIZE(pyramidVertices)];
+    CalculateNormals(pyramidVertices, ARRAY_SIZE(pyramidVertices), pyramidNormals, normalsCount);
 
     GLuint pyramidVao;
     glGenVertexArrays(1, &pyramidVao);
@@ -225,6 +261,14 @@ int SDL_main(int argc, char ** argv)
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    GLuint pyramidNormalsBuffer;
+    glGenBuffers(1, &pyramidNormalsBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, pyramidNormalsBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidNormals), pyramidNormals, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
 
     GLuint lightVao;
     glGenVertexArrays(1, &lightVao);
@@ -284,21 +328,20 @@ int SDL_main(int argc, char ** argv)
 
         glUseProgram(objectShaderProgram);
         glBindVertexArray(pyramidVao);
-        glDrawArrays(GL_TRIANGLES, 0, 18);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glUseProgram(lightShaderProgram);
 
         mat4 lightModel;
         glm_mat4_identity(lightModel);
-        glm_translate(lightModel, (vec3){1.2f, 1.0f, 2.0f});
-        glm_scale(lightModel, (vec3){0.2f, 0.2f, 0.2f});
+        glm_translate(lightModel, lightPos);
+        //glm_scale(lightModel, (vec3){0.2f, 0.2f, 0.2f});
         glUniformMatrix4fv(lightModelLocation, 1, GL_FALSE, (GLfloat *)lightModel);
-
         glUniformMatrix4fv(lightViewLocation, 1, GL_FALSE, (GLfloat *)view);
         glUniformMatrix4fv(lightProjectionLocation, 1, GL_FALSE, (GLfloat *)proj);
 
         glBindVertexArray(lightVao);
-        glDrawArrays(GL_TRIANGLES, 0, 18);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         SDL_GL_SwapWindow(window);
     }
