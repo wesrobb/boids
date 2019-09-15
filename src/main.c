@@ -198,6 +198,7 @@ int SDL_main(int argc, char ** argv)
     vec3 objectColor = { 0.5f, 0.8f, 0.2f };
     vec3 lightColor = { 1.0f, 1.0f, 1.0f };
     vec3 lightPos = {3.2f, 3.0f, 3.0f};
+    vec3 viewPos = {5.0f, 0.0f, 10.0f};
 
     GLuint objectVertexShader = CreateVertexShader(VERTEX_SHADER_PYRAMID);
     GLuint objectFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_PYRAMID);
@@ -209,9 +210,11 @@ int SDL_main(int argc, char ** argv)
     GLint objectColorLocation = glGetUniformLocation(objectShaderProgram, "color");
     GLint objectLightColorLocation = glGetUniformLocation(objectShaderProgram, "lightColor");
     GLint lightPosLocation = glGetUniformLocation(objectShaderProgram, "lightPos");
+    GLint viewPosLocation = glGetUniformLocation(objectShaderProgram, "viewPos");
     glUniform3fv(objectColorLocation, 1, objectColor);
     glUniform3fv(objectLightColorLocation, 1, lightColor);
     glUniform3fv(lightPosLocation, 1, lightPos);
+    glUniform3fv(viewPosLocation, 1, viewPos);
 
     GLuint lightVertexShader = CreateVertexShader(VERTEX_SHADER_LIGHT);
     GLuint lightFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_LIGHT);
@@ -222,8 +225,6 @@ int SDL_main(int argc, char ** argv)
     GLint lightModelLocation = glGetUniformLocation(lightShaderProgram, "model");
     GLint lightColorLocation = glGetUniformLocation(lightShaderProgram, "color");
     glUniform3fv(lightColorLocation, 1, lightColor);
-
-    f32 camX = 0.0f, camZ = 0.0f;
 
     vec3 pyramidVertices[] = {
         { 0.0f, 1.0f, 0.0f},
@@ -308,15 +309,16 @@ int SDL_main(int argc, char ** argv)
         glUseProgram(objectShaderProgram);
         mat4 objectModel;
         glm_mat4_identity(objectModel);
-        glm_rotate(objectModel, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
+        //glm_rotate(objectModel, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
         glUniformMatrix4fv(objectModelLocation, 1, GL_FALSE, (GLfloat *)objectModel);
 
-        f32 radius = 10.0f;
-        camX = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
-        camZ = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
+       // f32 radius = 10.0f;
+       // viewPos[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
+       // viewPos[2] = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
+       // glUniform3fv(viewPosLocation, 1, viewPos);
 
         mat4 view;
-        glm_lookat((vec3){camX, 0.0f, camZ},
+        glm_lookat(viewPos,
                    (vec3){0.0f, 0.0f, 0.0f},
                    (vec3){0.0f, 1.0f, 0.0f},
                    view);
@@ -325,6 +327,11 @@ int SDL_main(int argc, char ** argv)
         mat4 proj;
         glm_perspective(glm_rad(45.0f), (f32)width / (f32)height, 0.1f, 100.0f, proj);
         glUniformMatrix4fv(objectProjectionLocation, 1, GL_FALSE, (GLfloat *)proj);
+
+        f32 radius = 5.0f;
+        lightPos[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
+        lightPos[2] = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
+        glUniform3fv(lightPosLocation, 1, lightPos);
 
         glUseProgram(objectShaderProgram);
         glBindVertexArray(pyramidVao);
