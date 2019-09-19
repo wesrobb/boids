@@ -198,7 +198,14 @@ int SDL_main(int argc, char ** argv)
     vec3 objectColor = { 0.5f, 0.8f, 0.2f };
     vec3 lightColor = { 1.0f, 1.0f, 1.0f };
     vec3 lightPos = {3.2f, 3.0f, 3.0f};
-    vec3 viewPos = {5.0f, 0.0f, 10.0f};
+    vec3 viewPos = {5.0f, 10.0f, 15.0f};
+
+    Material pyramidMaterial = {
+        .ambient = {1.0f, 0.5f, 0.31f},
+        .diffuse = {1.0f, 0.5f, 0.31f},
+        .specular = {0.5f, 0.5f, 0.5f},
+        .shininess = 32.0f
+    };
 
     GLuint objectVertexShader = CreateVertexShader(VERTEX_SHADER_PYRAMID);
     GLuint objectFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_PYRAMID);
@@ -215,6 +222,15 @@ int SDL_main(int argc, char ** argv)
     glUniform3fv(objectLightColorLocation, 1, lightColor);
     glUniform3fv(lightPosLocation, 1, lightPos);
     glUniform3fv(viewPosLocation, 1, viewPos);
+
+    GLint pyramidAmbientLocation = glGetUniformLocation(objectShaderProgram, "material.ambient");
+    GLint pyramidDiffuseLocation = glGetUniformLocation(objectShaderProgram, "material.diffuse");
+    GLint objectSpecularLocation = glGetUniformLocation(objectShaderProgram, "material.specular");
+    GLint objectShininessLocation = glGetUniformLocation(objectShaderProgram, "material.shininess");
+    glUniform3fv(pyramidAmbientLocation, 1, pyramidMaterial.ambient);
+    glUniform3fv(pyramidDiffuseLocation, 1, pyramidMaterial.diffuse);
+    glUniform3fv(objectSpecularLocation, 1, pyramidMaterial.specular);
+    glUniform1f(objectShininessLocation , pyramidMaterial.shininess);
 
     GLuint lightVertexShader = CreateVertexShader(VERTEX_SHADER_LIGHT);
     GLuint lightFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_LIGHT);
@@ -307,8 +323,8 @@ int SDL_main(int argc, char ** argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(objectShaderProgram);
-        mat4 objectModel;
-        glm_mat4_identity(objectModel);
+        mat4 objectModel = GLM_MAT4_IDENTITY_INIT;
+        glm_scale(objectModel, (vec3){2.0f, 2.0f, 2.0f});
         //glm_rotate(objectModel, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
         glUniformMatrix4fv(objectModelLocation, 1, GL_FALSE, (GLfloat *)objectModel);
 
