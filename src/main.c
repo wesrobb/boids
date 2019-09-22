@@ -5,17 +5,33 @@
 #include "cglm/cglm.h" // Must be included before SDL since SDL won't redefine M_PI. Also brings in stdbool.h
 #include "SDL.h"
 
+#include "camera.c"
 #include "wr_opengl.c"
 
 static char *g_BasePath;
+static wr_camera g_camera;
 
-bool SdlProcessEvents()
+bool SdlProcessEvents(f32 dt)
 {
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
         switch (event.type)
         {
+            case SDL_KEYDOWN:
+            {
+                wr_camera_movement movement = WR_CAMERA_NONE;
+                if (event.key.keysym.sym == SDLK_w)
+                    movement |= WR_CAMERA_FORWARD;
+                if (event.key.keysym.sym == SDLK_s)
+                    movement |= WR_CAMERA_BACKWARD;
+                if (event.key.keysym.sym == SDLK_d)
+                    movement |= WR_CAMERA_RIGHT;
+                if (event.key.keysym.sym == SDLK_a)
+                    movement |= WR_CAMERA_LEFT;
+                wr_camera_update_keyboard(&g_camera, movement, dt);
+            }
+            break;
             case SDL_KEYUP:
             {
                 if (event.key.keysym.sym == SDLK_ESCAPE)
@@ -23,6 +39,12 @@ bool SdlProcessEvents()
                     return true;
                 }
             }
+            break;
+            case SDL_MOUSEMOTION:
+            {
+                wr_camera_update_mouse(&g_camera, event.motion.xrel, event.motion.yrel);
+            }
+            break;
         }
     }
 
@@ -169,6 +191,8 @@ int SDL_main(int argc, char ** argv)
         SDL_WINDOW_OPENGL
     );
 
+    SDL_SetRelativeMouseMode(true);
+
     // Check that the window was successfully created
     if (window == 0)
     {
@@ -183,9 +207,10 @@ int SDL_main(int argc, char ** argv)
 
     glEnable(GL_DEPTH_TEST);
 
+    wr_camera_init(&g_camera, 5.0f, 10.0f, 15.0f);
+
     vec3 objectColor = { 0.5f, 0.8f, 0.2f };
     vec3 lightColor = { 1.0f, 1.0f, 1.0f };
-    vec3 viewPos = {5.0f, 10.0f, 15.0f};
 
     Material pyramidMaterial = {
         .ambient = {1.0f, 0.5f, 0.31f},
@@ -212,7 +237,7 @@ int SDL_main(int argc, char ** argv)
     glUniform3fv(objectColorLocation, 1, objectColor);
 
     GLint viewPosLocation = glGetUniformLocation(objectShaderProgram, "viewPos");
-    glUniform3fv(viewPosLocation, 1, viewPos);
+    glUniform3fv(viewPosLocation, 1, g_camera.position);
 
     GLint lightPositionLocation = glGetUniformLocation(objectShaderProgram, "light.position");
     GLint lightAmbientLocation = glGetUniformLocation(objectShaderProgram, "light.ambient");
@@ -304,8 +329,6 @@ int SDL_main(int argc, char ** argv)
     bool stopping = false;
     while (!stopping)
     {
-        stopping = SdlProcessEvents();
-
         frameCounter++;
         last = now;
         now = SDL_GetPerformanceCounter();
@@ -319,6 +342,9 @@ int SDL_main(int argc, char ** argv)
             frameCounter = 0;
         }
 
+        stopping = SdlProcessEvents(dt);
+
+
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -328,16 +354,8 @@ int SDL_main(int argc, char ** argv)
         //glm_rotate(objectModel, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
         glUniformMatrix4fv(objectModelLocation, 1, GL_FALSE, (GLfloat *)objectModel);
 
-       // f32 radius = 10.0f;
-       // viewPos[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
-       // viewPos[2] = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
-       // glUniform3fv(viewPosLocation, 1, viewPos);
-
         mat4 view;
-        glm_lookat(viewPos,
-                   (vec3){0.0f, 0.0f, 0.0f},
-                   (vec3){0.0f, 1.0f, 0.0f},
-                   view);
+        wr_camera_view(&g_camera, view);
         glUniformMatrix4fv(objectViewLocation, 1, GL_FALSE, (GLfloat *)view);
 
         mat4 proj;
