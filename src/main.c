@@ -1,15 +1,5 @@
-typedef char               i8;
-typedef short              i16;
-typedef int                i32;
-typedef long long          i64;
-typedef unsigned char      u8;
-typedef unsigned short     u16;
-typedef unsigned int       u32;
-typedef unsigned long long u64;
-typedef float              f32;
-typedef double             f64;
-
-#include "shaders.c" // This must be included before SDL.h because SDL redefines main and main is used in GLSL
+#include "wr_types.h"
+#include "shaders.c"
 
 #include <stdio.h>
 #include "cglm/cglm.h" // Must be included before SDL since SDL won't redefine M_PI. Also brings in stdbool.h
@@ -18,8 +8,6 @@ typedef double             f64;
 #include "wr_opengl.c"
 
 static char *g_BasePath;
-
-#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
 bool SdlProcessEvents()
 {
@@ -197,7 +185,6 @@ int SDL_main(int argc, char ** argv)
 
     vec3 objectColor = { 0.5f, 0.8f, 0.2f };
     vec3 lightColor = { 1.0f, 1.0f, 1.0f };
-    vec3 lightPos = {3.2f, 3.0f, 3.0f};
     vec3 viewPos = {5.0f, 10.0f, 15.0f};
 
     Material pyramidMaterial = {
@@ -205,6 +192,13 @@ int SDL_main(int argc, char ** argv)
         .diffuse = {1.0f, 0.5f, 0.31f},
         .specular = {0.5f, 0.5f, 0.5f},
         .shininess = 32.0f
+    };
+
+    Light light = {
+        .position = {3.2f, 3.0f, 3.0f},
+        .ambient  = {0.2f, 0.2f, 0.2f},
+        .diffuse  = {0.5f, 0.5f, 0.5f},
+        .specular = {1.0f, 1.0f, 1.0f},
     };
 
     GLuint objectVertexShader = CreateVertexShader(VERTEX_SHADER_PYRAMID);
@@ -215,13 +209,19 @@ int SDL_main(int argc, char ** argv)
     GLint objectViewLocation = glGetUniformLocation(objectShaderProgram, "view");
     GLint objectModelLocation = glGetUniformLocation(objectShaderProgram, "model");
     GLint objectColorLocation = glGetUniformLocation(objectShaderProgram, "color");
-    GLint objectLightColorLocation = glGetUniformLocation(objectShaderProgram, "lightColor");
-    GLint lightPosLocation = glGetUniformLocation(objectShaderProgram, "lightPos");
-    GLint viewPosLocation = glGetUniformLocation(objectShaderProgram, "viewPos");
     glUniform3fv(objectColorLocation, 1, objectColor);
-    glUniform3fv(objectLightColorLocation, 1, lightColor);
-    glUniform3fv(lightPosLocation, 1, lightPos);
+
+    GLint viewPosLocation = glGetUniformLocation(objectShaderProgram, "viewPos");
     glUniform3fv(viewPosLocation, 1, viewPos);
+
+    GLint lightPositionLocation = glGetUniformLocation(objectShaderProgram, "light.position");
+    GLint lightAmbientLocation = glGetUniformLocation(objectShaderProgram, "light.ambient");
+    GLint lightDiffuseLocation = glGetUniformLocation(objectShaderProgram, "light.diffuse");
+    GLint lightSpecularLocation = glGetUniformLocation(objectShaderProgram, "light.specular");
+    glUniform3fv(lightPositionLocation, 1, light.position);
+    glUniform3fv(lightAmbientLocation, 1, light.ambient);
+    glUniform3fv(lightDiffuseLocation, 1, light.diffuse);
+    glUniform3fv(lightSpecularLocation, 1, light.specular);
 
     GLint pyramidAmbientLocation = glGetUniformLocation(objectShaderProgram, "material.ambient");
     GLint pyramidDiffuseLocation = glGetUniformLocation(objectShaderProgram, "material.diffuse");
@@ -345,9 +345,9 @@ int SDL_main(int argc, char ** argv)
         glUniformMatrix4fv(objectProjectionLocation, 1, GL_FALSE, (GLfloat *)proj);
 
         f32 radius = 5.0f;
-        lightPos[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
-        lightPos[2] = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
-        glUniform3fv(lightPosLocation, 1, lightPos);
+        light.position[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
+        light.position[2] = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
+        glUniform3fv(lightPositionLocation, 1, light.position);
 
         glUseProgram(objectShaderProgram);
         glBindVertexArray(pyramidVao);
@@ -357,7 +357,7 @@ int SDL_main(int argc, char ** argv)
 
         mat4 lightModel;
         glm_mat4_identity(lightModel);
-        glm_translate(lightModel, lightPos);
+        glm_translate(lightModel, light.position);
         //glm_scale(lightModel, (vec3){0.2f, 0.2f, 0.2f});
         glUniformMatrix4fv(lightModelLocation, 1, GL_FALSE, (GLfloat *)lightModel);
         glUniformMatrix4fv(lightViewLocation, 1, GL_FALSE, (GLfloat *)view);
