@@ -54,3 +54,18 @@ typedef enum wr_camera_movement {
     WR_CAMERA_RIGHT = 4,
     WR_CAMERA_LEFT = 8,
 } wr_camera_movement;
+
+typedef struct wr_aabb3 {
+    f32 minX, maxX;
+    f32 minY, maxY;
+    f32 minZ, maxZ;
+} wr_aabb3;
+
+#define WR_MAX_NUM_BOIDS 100
+typedef struct wr_boids {
+    vec3 positions[WR_MAX_NUM_BOIDS];
+    vec3 velocities[WR_MAX_NUM_BOIDS];
+
+    wr_aabb3 bounds;
+    u32 numBoids;
+} wr_boids;

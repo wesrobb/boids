@@ -94,6 +94,8 @@ typedef ptrdiff_t GLintptr;
     GLE(void,      UniformMatrix4fv,        GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) \
     GLE(void,      Viewport,                GLint x, GLint y, GLsizei width, GLsizei height) \
     GLE(void,      Enable,                  GLenum cap) \
+    GLE(void,      DrawArraysInstanced,     GLenum mode, GLint first, GLsizei count, GLsizei instancecount) \
+    GLE(void,      VertexAttribDivisor,     GLuint index, GLuint divisor) \
     /* end */
 
 #define GLE(ret, name, ...) typedef ret GLAPIENTRY name##Fn(__VA_ARGS__); name##Fn *gl##name;

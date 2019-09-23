@@ -59,6 +59,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <AdditionalIncludeDirectories>lib\cglm\include;lib\SDL2-2.0.10\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>HAVE_M_PI;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -77,6 +78,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <AdditionalIncludeDirectories>lib\cglm\include;lib\SDL2-2.0.10\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>HAVE_M_PI;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -87,18 +89,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\aabb.c" />
+    <ClCompile Include="src\boids.c" />
     <ClCompile Include="src\camera.c" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\opengl.c" />
-    <ClCompile Include="src\shaders.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\aabb.h" />
+    <ClInclude Include="src\boids.h" />
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\opengl.h" />
+    <ClInclude Include="src\shaders.h" />
     <ClInclude Include="src\types.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
+    <None Include="src\shaders\boids.inl" />
+    <None Include="src\shaders\light.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

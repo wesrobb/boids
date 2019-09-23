@@ -1,10 +1,12 @@
 #include "types.h"
 
-#include "shaders.inl" // SDL redefines main so bring in the shaders before SDL.h
+#include "shaders.h" // SDL redefines main so bring in the shaders before SDL.h
 
 #include "cglm/cglm.h" // Must be included before SDL since SDL won't redefine M_PI. Also brings in stdbool.h
 #include "SDL.h"
 
+#include "aabb.h"
+#include "boids.h"
 #include "camera.h"
 #include "opengl.h"
 
@@ -180,8 +182,8 @@ int SDL_main(int argc, char ** argv)
 
     g_BasePath = SDL_GetBasePath();
 
-    u32 width = 640;
-    u32 height = 480;
+    u32 width = 1280;
+    u32 height = 720;
 
     // Create an application window with the following settings:
     SDL_Window *window = SDL_CreateWindow(
@@ -209,6 +211,17 @@ int SDL_main(int argc, char ** argv)
 
     glEnable(GL_DEPTH_TEST);
 
+    wr_aabb3 bounds = {
+        .minX = -5.0f,
+        .maxX = 5.0f,
+        .minY = -5.0f,
+        .maxY = 5.0f,
+        .minZ = -5.0f,
+        .maxZ = 5.0f,
+    };
+    wr_boids boids;
+    u32 numBoids = 20;
+    wr_boids_init(&boids, &bounds, numBoids);
     wr_camera_init(&g_camera, 5.0f, 10.0f, 15.0f);
 
     vec3 objectColor = { 0.5f, 0.8f, 0.2f };
@@ -228,8 +241,8 @@ int SDL_main(int argc, char ** argv)
         .specular = {1.0f, 1.0f, 1.0f},
     };
 
-    GLuint objectVertexShader = CreateVertexShader(VERTEX_SHADER_PYRAMID);
-    GLuint objectFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_PYRAMID);
+    GLuint objectVertexShader = CreateVertexShader(VERTEX_SHADER_BOID);
+    GLuint objectFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_BOID);
     GLuint objectShaderProgram = CreateShaderProgram(objectVertexShader, objectFragmentShader);
     glUseProgram(objectShaderProgram);
     GLint objectProjectionLocation = glGetUniformLocation(objectShaderProgram, "projection");
@@ -314,6 +327,15 @@ int SDL_main(int argc, char ** argv)
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
 
+    GLuint instanceBuffer;
+    glGenBuffers(1, &instanceBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * numBoids, &boids.positions[0], GL_STATIC_DRAW);
+
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(2);
+    glVertexAttribDivisor(2, 1);
+
     GLuint lightVao;
     glGenVertexArrays(1, &lightVao);
     glBindVertexArray(lightVao);
@@ -352,7 +374,6 @@ int SDL_main(int argc, char ** argv)
 
         glUseProgram(objectShaderProgram);
         mat4 objectModel = GLM_MAT4_IDENTITY_INIT;
-        glm_scale(objectModel, (vec3){2.0f, 2.0f, 2.0f});
         //glm_rotate(objectModel, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
         glUniformMatrix4fv(objectModelLocation, 1, GL_FALSE, (GLfloat *)objectModel);
 
@@ -371,7 +392,7 @@ int SDL_main(int argc, char ** argv)
 
         glUseProgram(objectShaderProgram);
         glBindVertexArray(pyramidVao);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, numBoids);
 
         glUseProgram(lightShaderProgram);
 
