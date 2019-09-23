@@ -1,23 +1,8 @@
-#include "cglm/cglm.h" // Must be included before SDL since SDL won't redefine M_PI. Also brings in stdbool.h
+#include "types.h"
 
 #define SHADER(name, prefix, version, shaderSource) static const char* prefix##name = "#version " #version "\n" #shaderSource
 #define VERTEX_SHADER(name, shaderSource) SHADER(name, VERTEX_SHADER_, 330, shaderSource)
 #define FRAGMENT_SHADER(name, shaderSource) SHADER(name, FRAGMENT_SHADER_, 330, shaderSource)
-
-typedef struct {
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-    float shininess;
-} Material;
-
-typedef struct {
-    vec3 position;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-} Light;
 
 VERTEX_SHADER(PYRAMID,
 layout (location = 0) in vec3 pos;

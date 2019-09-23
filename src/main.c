@@ -1,12 +1,14 @@
-#include "wr_types.h"
-#include "shaders.c"
+#include "types.h"
 
-#include <stdio.h>
+#include "shaders.inl" // SDL redefines main so bring in the shaders before SDL.h
+
 #include "cglm/cglm.h" // Must be included before SDL since SDL won't redefine M_PI. Also brings in stdbool.h
 #include "SDL.h"
 
-#include "camera.c"
-#include "wr_opengl.c"
+#include "camera.h"
+#include "opengl.h"
+
+#include <stdio.h>
 
 static char *g_BasePath;
 static wr_camera g_camera;
@@ -212,14 +214,14 @@ int SDL_main(int argc, char ** argv)
     vec3 objectColor = { 0.5f, 0.8f, 0.2f };
     vec3 lightColor = { 1.0f, 1.0f, 1.0f };
 
-    Material pyramidMaterial = {
+    wr_material pyramidMaterial = {
         .ambient = {1.0f, 0.5f, 0.31f},
         .diffuse = {1.0f, 0.5f, 0.31f},
         .specular = {0.5f, 0.5f, 0.5f},
         .shininess = 32.0f
     };
 
-    Light light = {
+    wr_light light = {
         .position = {3.2f, 3.0f, 3.0f},
         .ambient  = {0.2f, 0.2f, 0.2f},
         .diffuse  = {0.5f, 0.5f, 0.5f},

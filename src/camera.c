@@ -1,4 +1,4 @@
-#include "wr_types.h"
+#include "camera.h"
 
 #include "cglm/cglm.h"
 #include "SDL_assert.h"
@@ -10,7 +10,7 @@
 #define MOVEMENT_SPEED         0.5f
 #define MOUSE_SENSITIVITY      0.1f
 
-void wr_camera_update(wr_camera *c)
+static void update(wr_camera *c)
 {
     SDL_assert(c);
 
@@ -50,7 +50,7 @@ void wr_camera_init(wr_camera *c, f32 x, f32 y, f32 z)
     c->mouseSensitivity = MOUSE_SENSITIVITY;
     c->zoom = DEFAULT_CAMERA_ZOOM;
 
-    wr_camera_update(c);
+    update(c);
 }
 
 void wr_camera_update_mouse(wr_camera *c, i32 xMouseRelative, i32 yMouseRelative)
@@ -66,7 +66,7 @@ void wr_camera_update_mouse(wr_camera *c, i32 xMouseRelative, i32 yMouseRelative
     if (c->pitch < -89)
         c->pitch = -89;
 
-    wr_camera_update(c);
+    update(c);
 }
 
 void wr_camera_update_keyboard(wr_camera *c, wr_camera_movement movement, f32 dt)
@@ -83,7 +83,7 @@ void wr_camera_update_keyboard(wr_camera *c, wr_camera_movement movement, f32 dt
     if (movement & WR_CAMERA_LEFT)
         glm_vec3_mulsubs(c->right, velocity, c->position);
 
-    wr_camera_update(c);
+    update(c);
 }
 
 void wr_camera_view(wr_camera *c, mat4 dest)

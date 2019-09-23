@@ -1,7 +1,6 @@
-#include "SDL.h"
-// #include "SDL_opengl.h"
-// #include "SDL_opengl_glext.h"
-// Keep these here just to lookup values
+#pragma once
+
+#include "types.h"
 
 #define GLAPI extern
 #define GLAPIENTRY __stdcall
@@ -97,13 +96,8 @@ typedef ptrdiff_t GLintptr;
     GLE(void,      Enable,                  GLenum cap) \
     /* end */
 
-#define GLE(ret, name, ...) typedef ret GLAPIENTRY name##Fn(__VA_ARGS__); static name##Fn *gl##name;
+#define GLE(ret, name, ...) typedef ret GLAPIENTRY name##Fn(__VA_ARGS__); name##Fn *gl##name;
 WR_GL_LIST
 #undef GLE
 
-static void wr_opengl_init()
-{
-#define GLE(ret, name, ...) gl##name = (name##Fn *)SDL_GL_GetProcAddress("gl" #name);
-    WR_GL_LIST
-#undef GLE
-}
+void wr_opengl_init();

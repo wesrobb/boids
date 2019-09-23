@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cglm/types.h"
+#include "SDL_types.h"
 
 typedef char               i8;
 typedef short              i16;
@@ -14,6 +15,21 @@ typedef float              f32;
 typedef double             f64;
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
+
+typedef struct wr_material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+} wr_material;
+
+typedef struct wr_light {
+    vec3 position;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+} wr_light;
 
 typedef struct wr_camera {
     vec3 position;
