@@ -399,7 +399,7 @@ int SDL_main(int argc, char ** argv)
         mat4 lightModel;
         glm_mat4_identity(lightModel);
         glm_translate(lightModel, light.position);
-        //glm_scale(lightModel, (vec3){0.2f, 0.2f, 0.2f});
+        glm_scale(lightModel, (vec3){0.2f, 0.2f, 0.2f});
         glUniformMatrix4fv(lightModelLocation, 1, GL_FALSE, (GLfloat *)lightModel);
         glUniformMatrix4fv(lightViewLocation, 1, GL_FALSE, (GLfloat *)view);
         glUniformMatrix4fv(lightProjectionLocation, 1, GL_FALSE, (GLfloat *)proj);
