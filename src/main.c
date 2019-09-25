@@ -2,8 +2,8 @@
 
 #include "shaders.h" // SDL redefines main so bring in the shaders before SDL.h
 
-#include "cglm/cglm.h" // Must be included before SDL since SDL won't redefine M_PI. Also brings in stdbool.h
 #include "SDL.h"
+#include "cglm/cglm.h"
 
 #include "aabb.h"
 #include "boids.h"
@@ -330,7 +330,7 @@ int SDL_main(int argc, char ** argv)
     GLuint instanceBuffer;
     glGenBuffers(1, &instanceBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * numBoids, &boids.positions[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * numBoids, &boids.positions[0], GL_STREAM_DRAW);
 
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(2);
@@ -390,7 +390,10 @@ int SDL_main(int argc, char ** argv)
         light.position[2] = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
         glUniform3fv(lightPositionLocation, 1, light.position);
 
-        glUseProgram(objectShaderProgram);
+        wr_boids_update(&boids, dt);
+        glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vec3)* numBoids, &boids.positions[0], GL_STREAM_DRAW);
+
         glBindVertexArray(pyramidVao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 36, numBoids);
 

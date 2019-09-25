@@ -8,8 +8,8 @@
 #include "stdlib.h"
 #include "time.h"
 
-#define MIN_VELOCITY 1.0f
-#define MAX_VELOCITY 1.0f
+#define MIN_VELOCITY 0.001f
+#define MAX_VELOCITY 0.002f
 
 static void vec3_rand(vec3 v)
 {
@@ -80,20 +80,19 @@ void wr_boids_update(wr_boids* b, f32 dt)
         vec3 velocity;
         glm_vec3_scale(b->velocities[i], dt, velocity);
 
-        vec3* p = &b->positions[i];
-        glm_vec3_addadd(*p, velocity, *p);
+        glm_vec3_add(b->positions[i], velocity, b->positions[i]);
 
-        if (*p[0] > bounds->maxX)
-            *p[0] = bounds->minX;
-        if (*p[0] < bounds->minX)
-            *p[0] = bounds->maxX;
-        if (*p[1] > bounds->maxY)
-            *p[1] = bounds->minY;
-        if (*p[1] < bounds->minY)
-            *p[1] = bounds->maxY;
-        if (*p[2] > bounds->maxZ)
-            *p[2] = bounds->minZ;
-        if (*p[2] < bounds->minZ)
-            *p[2] = bounds->maxZ;
+        if (b->positions[i][0] > bounds->maxX)
+            b->positions[i][0] = bounds->minX;
+        if (b->positions[i][0] < bounds->minX)
+            b->positions[i][0] = bounds->maxX;
+        if (b->positions[i][1] > bounds->maxY)
+            b->positions[i][1] = bounds->minY;
+        if (b->positions[i][1] < bounds->minY)
+            b->positions[i][1] = bounds->maxY;
+        if (b->positions[i][2] > bounds->maxZ)
+            b->positions[i][2] = bounds->minZ;
+        if (b->positions[i][2] < bounds->minZ)
+            b->positions[i][2] = bounds->maxZ;
     }
 }
