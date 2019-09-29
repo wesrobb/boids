@@ -7,3 +7,4 @@
 #include "opengl.c"
 #include "shaders.c"
 #include "shaders/boids.c"
+#include "shaders/light.c"

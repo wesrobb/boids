@@ -2,6 +2,7 @@
 
 #include "shaders.h" // SDL redefines main so bring in the shaders before SDL.h
 #include "shaders/boids.h"
+#include "shaders/light.h"
 
 #include "SDL.h"
 #include "cglm/cglm.h"
@@ -198,15 +199,9 @@ int SDL_main(int argc, char ** argv)
     glUniform3fv(boidsShader.uniforms.material.specular, 1, pyramidMaterial.specular);
     glUniform1f(boidsShader.uniforms.material.shininess , pyramidMaterial.shininess);
 
-    GLuint lightVertexShader = CreateVertexShader(VERTEX_SHADER_LIGHT);
-    GLuint lightFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_LIGHT);
-    GLuint lightShaderProgram = CreateShaderProgram(lightVertexShader, lightFragmentShader);
-    glUseProgram(lightShaderProgram);
-    GLint lightProjectionLocation = glGetUniformLocation(lightShaderProgram, "projection");
-    GLint lightViewLocation = glGetUniformLocation(lightShaderProgram, "view");
-    GLint lightModelLocation = glGetUniformLocation(lightShaderProgram, "model");
-    GLint lightColorLocation = glGetUniformLocation(lightShaderProgram, "color");
-    glUniform3fv(lightColorLocation, 1, lightColor);
+    wr_shdr_light lightShader = wr_shdr_light_init();
+    glUseProgram(lightShader.program);
+    glUniform3fv(lightShader.uniforms.color, 1, lightColor);
 
     vec3 pyramidVertices[] = {
         { 0.0f, 1.0f, 0.0f},
@@ -322,15 +317,15 @@ int SDL_main(int argc, char ** argv)
         glBindVertexArray(pyramidVao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 36, numBoids);
 
-        glUseProgram(lightShaderProgram);
+        glUseProgram(lightShader.program);
 
         mat4 lightModel;
         glm_mat4_identity(lightModel);
         glm_translate(lightModel, light.position);
         glm_scale(lightModel, (vec3){0.2f, 0.2f, 0.2f});
-        glUniformMatrix4fv(lightModelLocation, 1, GL_FALSE, (GLfloat *)lightModel);
-        glUniformMatrix4fv(lightViewLocation, 1, GL_FALSE, (GLfloat *)view);
-        glUniformMatrix4fv(lightProjectionLocation, 1, GL_FALSE, (GLfloat *)proj);
+        glUniformMatrix4fv(lightShader.uniforms.model, 1, GL_FALSE, (GLfloat *)lightModel);
+        glUniformMatrix4fv(lightShader.uniforms.view, 1, GL_FALSE, (GLfloat *)view);
+        glUniformMatrix4fv(lightShader.uniforms.proj, 1, GL_FALSE, (GLfloat *)proj);
 
         glBindVertexArray(lightVao);
         glDrawArrays(GL_TRIANGLES, 0, 36);
