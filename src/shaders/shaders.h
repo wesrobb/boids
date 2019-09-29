@@ -9,5 +9,3 @@
 u32 CreateVertexShader(const char* vertexShaderSource);
 u32 CreateFragmentShader(const char* fragmentShaderSource);
 u32 CreateShaderProgram(u32 vertexShader, u32 fragmentShader);
-
-#include "shaders/light.inl"

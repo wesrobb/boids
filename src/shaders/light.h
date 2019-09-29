@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../shaders.h"
+#include "shaders.h"
 
 VERTEX_SHADER(LIGHT,
 layout (location = 0) in vec3 pos;

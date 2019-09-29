@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "shaders.h" // SDL redefines main so bring in the shaders before SDL.h
+// SDL redefines main so bring in the shaders before SDL.h
 #include "shaders/boids.h"
 #include "shaders/light.h"
 
