@@ -20,3 +20,15 @@ wr_shdr_light wr_shdr_light_init()
 
     return result;
 }
+
+void wr_shdr_light_update_uniforms(wr_shdr_light shdr, wr_shdr_light_data data)
+{
+    glUseProgram(shdr.program);
+
+    glUniformMatrix4fv(shdr.uniforms.model, 1, GL_FALSE, (GLfloat *)data.model);
+    glUniformMatrix4fv(shdr.uniforms.view, 1, GL_FALSE, (GLfloat *)data.view);
+    glUniformMatrix4fv(shdr.uniforms.proj, 1, GL_FALSE, (GLfloat *)data.proj);
+    glUniform3fv(shdr.uniforms.color, 1, data.color);
+
+    glUseProgram(0);
+}

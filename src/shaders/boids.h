@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../types.h"
 #include "shaders.h"
 
 VERTEX_SHADER(BOID,
@@ -43,7 +44,7 @@ struct Light {
 };
 
 uniform vec3 color;
-uniform vec3 camPos;
+uniform vec3 cameraPos;
 uniform Material material;
 uniform Light light;
 
@@ -56,7 +57,7 @@ void main()
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = light.diffuse * (diff * material.diffuse);
 
-    vec3 viewDir = normalize(camPos - FragPos);
+    vec3 viewDir = normalize(cameraPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     vec3 specular = light.specular * (spec * material.specular);
@@ -95,4 +96,15 @@ typedef struct wr_shdr_boids {
     wr_shdr_uniforms_boids uniforms;
 } wr_shdr_boids;
 
+typedef struct wr_shdr_boids_data {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+    vec3 color;
+    vec3 camPos;
+    wr_light light;
+    wr_material material;
+} wr_shdr_boids_data;
+
 wr_shdr_boids wr_shdr_boids_init();
+void wr_shdr_boids_update_uniforms(wr_shdr_boids shdr, wr_shdr_boids_data data);

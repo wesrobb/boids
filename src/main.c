@@ -169,39 +169,27 @@ int SDL_main(int argc, char ** argv)
     wr_boids_init(&boids, &bounds, numBoids);
     wr_camera_init(&g_camera, 5.0f, 10.0f, 15.0f);
 
-    vec3 objectColor = { 0.5f, 0.8f, 0.2f };
-    vec3 lightColor = { 1.0f, 1.0f, 1.0f };
-
-    wr_material pyramidMaterial = {
-        .ambient = {1.0f, 0.5f, 0.31f},
-        .diffuse = {1.0f, 0.5f, 0.31f},
-        .specular = {0.5f, 0.5f, 0.5f},
-        .shininess = 32.0f
-    };
-
-    wr_light light = {
-        .position = {3.2f, 3.0f, 3.0f},
-        .ambient  = {0.2f, 0.2f, 0.2f},
-        .diffuse  = {0.5f, 0.5f, 0.5f},
-        .specular = {1.0f, 1.0f, 1.0f},
-    };
-
     wr_shdr_boids boidsShader = wr_shdr_boids_init();
-    glUseProgram(boidsShader.program);
-    glUniform3fv(boidsShader.uniforms.color, 1, objectColor);
-    glUniform3fv(boidsShader.uniforms.camPos, 1, g_camera.position);
-    glUniform3fv(boidsShader.uniforms.light.position, 1, light.position);
-    glUniform3fv(boidsShader.uniforms.light.ambient, 1, light.ambient);
-    glUniform3fv(boidsShader.uniforms.light.diffuse, 1, light.diffuse);
-    glUniform3fv(boidsShader.uniforms.light.specular, 1, light.specular);
-    glUniform3fv(boidsShader.uniforms.material.ambient, 1, pyramidMaterial.ambient);
-    glUniform3fv(boidsShader.uniforms.material.diffuse, 1, pyramidMaterial.diffuse);
-    glUniform3fv(boidsShader.uniforms.material.specular, 1, pyramidMaterial.specular);
-    glUniform1f(boidsShader.uniforms.material.shininess , pyramidMaterial.shininess);
+    wr_shdr_boids_data boidsShaderData = {
+        .color = { 0.5f, 0.8f, 0.2f },
+        .light = {
+            .position = {3.2f, 3.0f, 3.0f},
+            .ambient  = {0.2f, 0.2f, 0.2f},
+            .diffuse  = {0.5f, 0.5f, 0.5f},
+            .specular = {1.0f, 1.0f, 1.0f},
+        },
+        .material = {
+            .ambient = {1.0f, 0.5f, 0.31f},
+            .diffuse = {1.0f, 0.5f, 0.31f},
+            .specular = {0.5f, 0.5f, 0.5f},
+            .shininess = 32.0f
+        }
+    };
 
     wr_shdr_light lightShader = wr_shdr_light_init();
-    glUseProgram(lightShader.program);
-    glUniform3fv(lightShader.uniforms.color, 1, lightColor);
+    wr_shdr_light_data lightShaderData = {
+        .color = {1.0f, 1.0f, 1.0f}
+    };
 
     vec3 pyramidVertices[] = {
         { 0.0f, 1.0f, 0.0f},
@@ -292,41 +280,37 @@ int SDL_main(int argc, char ** argv)
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(boidsShader.program);
-        mat4 objectModel = GLM_MAT4_IDENTITY_INIT;
-        //glm_rotate(objectModel, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
-        glUniformMatrix4fv(boidsShader.uniforms.model, 1, GL_FALSE, (GLfloat *)objectModel);
+        glm_mat4_identity(boidsShaderData.model);
 
-        mat4 view;
-        wr_camera_view(&g_camera, view);
-        glUniformMatrix4fv(boidsShader.uniforms.view, 1, GL_FALSE, (GLfloat *)view);
+        wr_camera_view(&g_camera, boidsShaderData.view);
+        glm_vec3_copy(g_camera.position, boidsShaderData.camPos);
 
-        mat4 proj;
-        glm_perspective(glm_rad(45.0f), (f32)width / (f32)height, 0.1f, 100.0f, proj);
-        glUniformMatrix4fv(boidsShader.uniforms.proj, 1, GL_FALSE, (GLfloat *)proj);
+        glm_perspective(glm_rad(45.0f), (f32)width / (f32)height, 0.1f, 100.0f, boidsShaderData.proj);
 
         f32 radius = 5.0f;
-        light.position[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
-        light.position[2] = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
-        glUniform3fv(boidsShader.uniforms.light.position, 1, light.position);
+        boidsShaderData.light.position[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
+        boidsShaderData.light.position[2] = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
+
+        wr_shdr_boids_update_uniforms(boidsShader, boidsShaderData);
 
         wr_boids_update(&boids, dt);
         glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vec3)* numBoids, &boids.positions[0], GL_STREAM_DRAW);
 
+        glUseProgram(boidsShader.program);
         glBindVertexArray(pyramidVao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 36, numBoids);
 
+
+        glm_mat4_identity(lightShaderData.model);
+        glm_translate(lightShaderData.model, boidsShaderData.light.position);
+        glm_scale(lightShaderData.model, (vec3){0.2f, 0.2f, 0.2f});
+        glm_mat4_copy(boidsShaderData.view, lightShaderData.view);
+        glm_mat4_copy(boidsShaderData.proj, lightShaderData.proj);
+
+        wr_shdr_light_update_uniforms(lightShader, lightShaderData);
+
         glUseProgram(lightShader.program);
-
-        mat4 lightModel;
-        glm_mat4_identity(lightModel);
-        glm_translate(lightModel, light.position);
-        glm_scale(lightModel, (vec3){0.2f, 0.2f, 0.2f});
-        glUniformMatrix4fv(lightShader.uniforms.model, 1, GL_FALSE, (GLfloat *)lightModel);
-        glUniformMatrix4fv(lightShader.uniforms.view, 1, GL_FALSE, (GLfloat *)view);
-        glUniformMatrix4fv(lightShader.uniforms.proj, 1, GL_FALSE, (GLfloat *)proj);
-
         glBindVertexArray(lightVao);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
