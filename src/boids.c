@@ -35,9 +35,9 @@ static void vec3_rand_bounded(vec3 v, wr_aabb3 *bounds)
     SDL_assert(v != 0);
     SDL_assert(bounds);
 
-    f32 x = (f32)(rand() % (int)(bounds->maxX - bounds->minX));
-    f32 y = (f32)(rand() % (int)(bounds->maxY - bounds->minY));
-    f32 z = (f32)(rand() % (int)(bounds->maxZ - bounds->minZ));
+    f32 x = f32_rand_range(bounds->minX, bounds->maxX);
+    f32 y = f32_rand_range(bounds->minY, bounds->maxY);
+    f32 z = f32_rand_range(bounds->minZ, bounds->maxZ);
 
     v[0] = x;
     v[1] = y;
