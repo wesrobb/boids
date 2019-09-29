@@ -20,7 +20,7 @@ void main()
 });
 
 FRAGMENT_SHADER(BOID,
-    out vec4 FragColor;
+out vec4 FragColor;
 
 in vec3 FragPos;
 in vec3 Normal;
