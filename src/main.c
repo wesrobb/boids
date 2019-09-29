@@ -1,6 +1,7 @@
 #include "types.h"
 
 #include "shaders.h" // SDL redefines main so bring in the shaders before SDL.h
+#include "shaders/boids.h"
 
 #include "SDL.h"
 #include "cglm/cglm.h"
@@ -86,63 +87,6 @@ bool SdlReadFile(const char *filePath, char *buffer, u32 bufferSize)
 
     buffer[totalBytesRead] = 0;
     return true;
-}
-
-GLuint CreateVertexShader(const char* vertexShaderSource)
-{
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, 0);
-    glCompileShader(vertexShader);
-    int success;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        char log[512] = {0};
-        glGetShaderInfoLog(vertexShader, 512, 0, log);
-        printf("Vertex shader compilation failed: %s\n", log);
-        exit(1);
-    }
-
-    return vertexShader;
-}
-
-GLuint CreateFragmentShader(const char* fragmentShaderSource)
-{
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, 0);
-    glCompileShader(fragmentShader);
-    int success;
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        char log[512] = {0};
-        glGetShaderInfoLog(fragmentShader, 512, 0, log);
-        printf("Fragment shader compilation failed: %s\n", log);
-        exit(1);
-    }
-
-    return fragmentShader;
-}
-
-GLuint CreateShaderProgram(GLuint vertexShader, GLuint fragmentShader)
-{
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    int success;
-    char log[512] = {0};
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if(!success) {
-        glGetProgramInfoLog(shaderProgram, 512, 0, log);
-        printf("Shader program linking failed: %s\n", log);
-        exit(1);
-    }
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    return shaderProgram;
 }
 
 void CalculateNormals(vec3 *vertices, u32 verticesCount, vec3 *normals, u32 normalsCount)
@@ -241,36 +185,18 @@ int SDL_main(int argc, char ** argv)
         .specular = {1.0f, 1.0f, 1.0f},
     };
 
-    GLuint objectVertexShader = CreateVertexShader(VERTEX_SHADER_BOID);
-    GLuint objectFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_BOID);
-    GLuint objectShaderProgram = CreateShaderProgram(objectVertexShader, objectFragmentShader);
-    glUseProgram(objectShaderProgram);
-    GLint objectProjectionLocation = glGetUniformLocation(objectShaderProgram, "projection");
-    GLint objectViewLocation = glGetUniformLocation(objectShaderProgram, "view");
-    GLint objectModelLocation = glGetUniformLocation(objectShaderProgram, "model");
-    GLint objectColorLocation = glGetUniformLocation(objectShaderProgram, "color");
-    glUniform3fv(objectColorLocation, 1, objectColor);
-
-    GLint viewPosLocation = glGetUniformLocation(objectShaderProgram, "viewPos");
-    glUniform3fv(viewPosLocation, 1, g_camera.position);
-
-    GLint lightPositionLocation = glGetUniformLocation(objectShaderProgram, "light.position");
-    GLint lightAmbientLocation = glGetUniformLocation(objectShaderProgram, "light.ambient");
-    GLint lightDiffuseLocation = glGetUniformLocation(objectShaderProgram, "light.diffuse");
-    GLint lightSpecularLocation = glGetUniformLocation(objectShaderProgram, "light.specular");
-    glUniform3fv(lightPositionLocation, 1, light.position);
-    glUniform3fv(lightAmbientLocation, 1, light.ambient);
-    glUniform3fv(lightDiffuseLocation, 1, light.diffuse);
-    glUniform3fv(lightSpecularLocation, 1, light.specular);
-
-    GLint pyramidAmbientLocation = glGetUniformLocation(objectShaderProgram, "material.ambient");
-    GLint pyramidDiffuseLocation = glGetUniformLocation(objectShaderProgram, "material.diffuse");
-    GLint objectSpecularLocation = glGetUniformLocation(objectShaderProgram, "material.specular");
-    GLint objectShininessLocation = glGetUniformLocation(objectShaderProgram, "material.shininess");
-    glUniform3fv(pyramidAmbientLocation, 1, pyramidMaterial.ambient);
-    glUniform3fv(pyramidDiffuseLocation, 1, pyramidMaterial.diffuse);
-    glUniform3fv(objectSpecularLocation, 1, pyramidMaterial.specular);
-    glUniform1f(objectShininessLocation , pyramidMaterial.shininess);
+    wr_shdr_boids boidsShader = wr_shdr_boids_init();
+    glUseProgram(boidsShader.program);
+    glUniform3fv(boidsShader.uniforms.color, 1, objectColor);
+    glUniform3fv(boidsShader.uniforms.camPos, 1, g_camera.position);
+    glUniform3fv(boidsShader.uniforms.light.position, 1, light.position);
+    glUniform3fv(boidsShader.uniforms.light.ambient, 1, light.ambient);
+    glUniform3fv(boidsShader.uniforms.light.diffuse, 1, light.diffuse);
+    glUniform3fv(boidsShader.uniforms.light.specular, 1, light.specular);
+    glUniform3fv(boidsShader.uniforms.material.ambient, 1, pyramidMaterial.ambient);
+    glUniform3fv(boidsShader.uniforms.material.diffuse, 1, pyramidMaterial.diffuse);
+    glUniform3fv(boidsShader.uniforms.material.specular, 1, pyramidMaterial.specular);
+    glUniform1f(boidsShader.uniforms.material.shininess , pyramidMaterial.shininess);
 
     GLuint lightVertexShader = CreateVertexShader(VERTEX_SHADER_LIGHT);
     GLuint lightFragmentShader = CreateFragmentShader(FRAGMENT_SHADER_LIGHT);
@@ -368,27 +294,26 @@ int SDL_main(int argc, char ** argv)
 
         stopping = SdlProcessEvents(dt);
 
-
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(objectShaderProgram);
+        glUseProgram(boidsShader.program);
         mat4 objectModel = GLM_MAT4_IDENTITY_INIT;
         //glm_rotate(objectModel, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
-        glUniformMatrix4fv(objectModelLocation, 1, GL_FALSE, (GLfloat *)objectModel);
+        glUniformMatrix4fv(boidsShader.uniforms.model, 1, GL_FALSE, (GLfloat *)objectModel);
 
         mat4 view;
         wr_camera_view(&g_camera, view);
-        glUniformMatrix4fv(objectViewLocation, 1, GL_FALSE, (GLfloat *)view);
+        glUniformMatrix4fv(boidsShader.uniforms.view, 1, GL_FALSE, (GLfloat *)view);
 
         mat4 proj;
         glm_perspective(glm_rad(45.0f), (f32)width / (f32)height, 0.1f, 100.0f, proj);
-        glUniformMatrix4fv(objectProjectionLocation, 1, GL_FALSE, (GLfloat *)proj);
+        glUniformMatrix4fv(boidsShader.uniforms.proj, 1, GL_FALSE, (GLfloat *)proj);
 
         f32 radius = 5.0f;
         light.position[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
         light.position[2] = cosf((f32)SDL_GetTicks() / 5000.0f) * radius;
-        glUniform3fv(lightPositionLocation, 1, light.position);
+        glUniform3fv(boidsShader.uniforms.light.position, 1, light.position);
 
         wr_boids_update(&boids, dt);
         glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);

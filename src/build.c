@@ -5,3 +5,5 @@
 #include "camera.c"
 #include "main.c"
 #include "opengl.c"
+#include "shaders.c"
+#include "shaders/boids.c"
