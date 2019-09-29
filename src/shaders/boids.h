@@ -6,20 +6,20 @@
 VERTEX_SHADER(BOID,
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 norm;
-layout(location = 2) in vec3 offset;
+layout(location = 2) in mat4 model;
 
 out vec3 FragPos;
 out vec3 Normal;
 
 uniform mat4 projection;
-uniform mat4 model;
 uniform mat4 view;
 
 void main()
 {
-    FragPos = vec3(model * vec4(pos + offset, 1.0));
-    Normal = mat3(transpose(inverse(model))) * norm; // Do this on the CPU and pass in via uniform
-    gl_Position = projection * view * model * vec4(pos + offset, 1.0);
+    mat4 m = model;
+    FragPos = vec3(m * vec4(pos, 1.0));
+    Normal = mat3(transpose(inverse(m))) * norm; // Do this on the CPU and pass in via uniform
+    gl_Position = projection * view * m * vec4(pos, 1.0);
 });
 
 FRAGMENT_SHADER(BOID,
@@ -83,7 +83,6 @@ typedef struct wr_shdr_uniforms_boids_material {
 typedef struct wr_shdr_uniforms_boids {
     i32 proj;
     i32 view;
-    i32 model;
     i32 color;
     i32 camPos;
 
@@ -97,7 +96,6 @@ typedef struct wr_shdr_boids {
 } wr_shdr_boids;
 
 typedef struct wr_shdr_boids_data {
-    mat4 model;
     mat4 view;
     mat4 proj;
     vec3 color;

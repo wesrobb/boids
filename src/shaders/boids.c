@@ -14,7 +14,6 @@ wr_shdr_boids wr_shdr_boids_init()
     result.program = program;
     result.uniforms.proj = glGetUniformLocation(program, "projection");
     result.uniforms.view = glGetUniformLocation(program, "view");
-    result.uniforms.model = glGetUniformLocation(program, "model");
     result.uniforms.color = glGetUniformLocation(program, "color");
     result.uniforms.camPos = glGetUniformLocation(program, "cameraPos");
     result.uniforms.light.position = glGetUniformLocation(program, "light.position");
@@ -34,7 +33,6 @@ void wr_shdr_boids_update_uniforms(wr_shdr_boids shdr, wr_shdr_boids_data data)
 {
     glUseProgram(shdr.program);
 
-    glUniformMatrix4fv(shdr.uniforms.model, 1, GL_FALSE, (GLfloat *)data.model);
     glUniformMatrix4fv(shdr.uniforms.view, 1, GL_FALSE, (GLfloat *)data.view);
     glUniformMatrix4fv(shdr.uniforms.proj, 1, GL_FALSE, (GLfloat *)data.proj);
     glUniform3fv(shdr.uniforms.color, 1, data.color);

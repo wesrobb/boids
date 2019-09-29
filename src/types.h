@@ -64,8 +64,10 @@ typedef struct wr_aabb3 {
 #define WR_MAX_NUM_BOIDS 100
 typedef struct wr_boids {
     vec3 positions[WR_MAX_NUM_BOIDS];
-    vec3 velocities[WR_MAX_NUM_BOIDS];
+    vec3 directions[WR_MAX_NUM_BOIDS];
+    mat4 models[WR_MAX_NUM_BOIDS];
 
     wr_aabb3 bounds;
     u32 numBoids;
+    f32 speed;
 } wr_boids;

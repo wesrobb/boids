@@ -165,9 +165,9 @@ int SDL_main(int argc, char ** argv)
         .maxZ = 15.0f,
     };
     wr_boids boids;
-    u32 numBoids = 20;
-    wr_boids_init(&boids, &bounds, numBoids);
-    wr_camera_init(&g_camera, 5.0f, 10.0f, 15.0f);
+    u32 numBoids = 1;
+    wr_boids_init(&boids, &bounds, numBoids, 0.01f);
+    wr_camera_init(&g_camera, 0.0f, 0.0f, 50.0f);
 
     wr_shdr_boids boidsShader = wr_shdr_boids_init();
     wr_shdr_boids_data boidsShaderData = {
@@ -192,16 +192,16 @@ int SDL_main(int argc, char ** argv)
     };
 
     vec3 pyramidVertices[] = {
-        { 0.0f, 1.0f, 0.0f},
+        { 0.0f, 3.0f, 0.0f},
         {-1.0f,-1.0f, 1.0f},
         { 1.0f,-1.0f, 1.0f},
-        { 0.0f, 1.0f, 0.0f},
+        { 0.0f, 3.0f, 0.0f},
         { 1.0f,-1.0f, 1.0f},
         { 1.0f,-1.0f,-1.0f},
-        { 0.0f, 1.0f, 0.0f},
+        { 0.0f, 3.0f, 0.0f},
         { 1.0f,-1.0f,-1.0f},
         {-1.0f,-1.0f,-1.0f},
-        { 0.0f, 1.0f, 0.0f},
+        { 0.0f, 3.0f, 0.0f},
         {-1.0f,-1.0f,-1.0f},
         {-1.0f,-1.0f, 1.0f},
         {-1.0f,-1.0f, 1.0f},
@@ -236,14 +236,24 @@ int SDL_main(int argc, char ** argv)
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
 
-    GLuint instanceBuffer;
-    glGenBuffers(1, &instanceBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * numBoids, &boids.positions[0], GL_STREAM_DRAW);
+    GLuint boidModelsBuffer;
+    glGenBuffers(1, &boidModelsBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, boidModelsBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(mat4) * numBoids, &boids.models[0], GL_STREAM_DRAW);
 
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
     glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)(1 * sizeof(vec4)));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)(2 * sizeof(vec4)));
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)(3 * sizeof(vec4)));
+    glEnableVertexAttribArray(5);
+
     glVertexAttribDivisor(2, 1);
+    glVertexAttribDivisor(3, 1);
+    glVertexAttribDivisor(4, 1);
+    glVertexAttribDivisor(5, 1);
 
     GLuint lightVao;
     glGenVertexArrays(1, &lightVao);
@@ -275,17 +285,28 @@ int SDL_main(int argc, char ** argv)
             frameCounter = 0;
         }
 
+        // TODO: Delete this. Just for debugging
+        if (dt < 16.667f)
+        {
+            SDL_Delay((u32)(16.667f - dt));
+        }
+        dt = 16.667f;
+
         stopping = SdlProcessEvents(dt);
 
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm_mat4_identity(boidsShaderData.model);
+        wr_boids_update(&boids, dt);
+
+        glUseProgram(boidsShader.program);
+        glBindBuffer(GL_ARRAY_BUFFER, boidModelsBuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(mat4)* numBoids, &boids.models[0], GL_STREAM_DRAW);
 
         wr_camera_view(&g_camera, boidsShaderData.view);
         glm_vec3_copy(g_camera.position, boidsShaderData.camPos);
 
-        glm_perspective(glm_rad(45.0f), (f32)width / (f32)height, 0.1f, 100.0f, boidsShaderData.proj);
+        glm_perspective(glm_rad(80.0f), (f32)width / (f32)height, 0.1f, 100.0f, boidsShaderData.proj);
 
         f32 radius = 5.0f;
         boidsShaderData.light.position[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
@@ -293,18 +314,12 @@ int SDL_main(int argc, char ** argv)
 
         wr_shdr_boids_update_uniforms(boidsShader, boidsShaderData);
 
-        wr_boids_update(&boids, dt);
-        glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vec3)* numBoids, &boids.positions[0], GL_STREAM_DRAW);
-
         glUseProgram(boidsShader.program);
         glBindVertexArray(pyramidVao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 36, numBoids);
 
-
         glm_mat4_identity(lightShaderData.model);
         glm_translate(lightShaderData.model, boidsShaderData.light.position);
-        glm_scale(lightShaderData.model, (vec3){0.2f, 0.2f, 0.2f});
         glm_mat4_copy(boidsShaderData.view, lightShaderData.view);
         glm_mat4_copy(boidsShaderData.proj, lightShaderData.proj);
 
