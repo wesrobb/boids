@@ -8,16 +8,22 @@
 #include "stdlib.h"
 #include "time.h"
 
-#define MIN_VELOCITY 0.001f
-#define MAX_VELOCITY 0.002f
+#define MIN_VELOCITY 0.0005f
+#define MAX_VELOCITY 0.004f
 
-static void vec3_rand(vec3 v)
+static f32 f32_rand_range(f32 min, f32 max)
 {
-    SDL_assert(v);
+    return min + (float)(rand()) / ((float)(RAND_MAX/(max-min)));
+}
 
-    f32 x = (f32)rand();
-    f32 y = (f32)rand();
-    f32 z = (f32)rand();
+
+static void vec3_rand(vec3 v, f32 min, f32 max)
+{
+    SDL_assert(v != 0);
+
+    f32 x = f32_rand_range(min, max);
+    f32 y = f32_rand_range(min, max);
+    f32 z = f32_rand_range(min, max);
 
     v[0] = x;
     v[1] = y;
@@ -26,7 +32,7 @@ static void vec3_rand(vec3 v)
 
 static void vec3_rand_bounded(vec3 v, wr_aabb3 *bounds)
 {
-    SDL_assert(v);
+    SDL_assert(v != 0);
     SDL_assert(bounds);
 
     f32 x = (f32)(rand() % (int)(bounds->maxX - bounds->minX));
@@ -64,7 +70,7 @@ void wr_boids_init(wr_boids *b, wr_aabb3 *bounds, u32 numBoids)
         if (b->positions[i][2] < bounds->minZ)
             b->positions[i][2] = bounds->maxZ;
 
-        vec3_rand(b->velocities[i]);
+        vec3_rand(b->velocities[i], MIN_VELOCITY, MAX_VELOCITY);
         glm_vec3_clamp(b->velocities[i], MIN_VELOCITY, MAX_VELOCITY);
     }
 }

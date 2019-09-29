@@ -157,12 +157,12 @@ int SDL_main(int argc, char ** argv)
     glEnable(GL_DEPTH_TEST);
 
     wr_aabb3 bounds = {
-        .minX = -5.0f,
-        .maxX = 5.0f,
-        .minY = -5.0f,
-        .maxY = 5.0f,
-        .minZ = -5.0f,
-        .maxZ = 5.0f,
+        .minX = -15.0f,
+        .maxX = 15.0f,
+        .minY = -15.0f,
+        .maxY = 15.0f,
+        .minZ = -15.0f,
+        .maxZ = 15.0f,
     };
     wr_boids boids;
     u32 numBoids = 20;
