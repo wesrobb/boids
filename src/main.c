@@ -127,8 +127,8 @@ int SDL_main(int argc, char ** argv)
 
     g_BasePath = SDL_GetBasePath();
 
-    u32 width = 1280;
-    u32 height = 720;
+    u32 width = 1920;
+    u32 height = 1080;
 
     // Create an application window with the following settings:
     SDL_Window *window = SDL_CreateWindow(
@@ -156,16 +156,17 @@ int SDL_main(int argc, char ** argv)
 
     glEnable(GL_DEPTH_TEST);
 
+    f32 boundHalfDistance = 40.0f;
     wr_aabb3 bounds = {
-        .minX = -15.0f,
-        .maxX = 15.0f,
-        .minY = -15.0f,
-        .maxY = 15.0f,
-        .minZ = -15.0f,
-        .maxZ = 15.0f,
+        .minX = -boundHalfDistance,
+        .maxX = boundHalfDistance,
+        .minY = -boundHalfDistance,
+        .maxY = boundHalfDistance,
+        .minZ = -boundHalfDistance,
+        .maxZ = boundHalfDistance,
     };
     wr_boids boids;
-    u32 numBoids = 1;
+    u32 numBoids = 20;
     wr_boids_init(&boids, &bounds, numBoids, 0.01f);
     wr_camera_init(&g_camera, 0.0f, 0.0f, 50.0f);
 
@@ -241,13 +242,13 @@ int SDL_main(int argc, char ** argv)
     glBindBuffer(GL_ARRAY_BUFFER, boidModelsBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(mat4) * numBoids, &boids.models[0], GL_STREAM_DRAW);
 
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)0);
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)(1 * sizeof(vec4)));
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(1 * sizeof(vec4)));
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)(2 * sizeof(vec4)));
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(2 * sizeof(vec4)));
     glEnableVertexAttribArray(4);
-    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)(3 * sizeof(vec4)));
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(3 * sizeof(vec4)));
     glEnableVertexAttribArray(5);
 
     glVertexAttribDivisor(2, 1);
@@ -300,6 +301,7 @@ int SDL_main(int argc, char ** argv)
         wr_boids_update(&boids, dt);
 
         glUseProgram(boidsShader.program);
+        glBindVertexArray(pyramidVao);
         glBindBuffer(GL_ARRAY_BUFFER, boidModelsBuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(mat4)* numBoids, &boids.models[0], GL_STREAM_DRAW);
 

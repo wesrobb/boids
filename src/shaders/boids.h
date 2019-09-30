@@ -16,10 +16,9 @@ uniform mat4 view;
 
 void main()
 {
-    mat4 m = model;
-    FragPos = vec3(m * vec4(pos, 1.0));
-    Normal = mat3(transpose(inverse(m))) * norm; // Do this on the CPU and pass in via uniform
-    gl_Position = projection * view * m * vec4(pos, 1.0);
+    FragPos = vec3(model * vec4(pos, 1.0));
+    Normal = mat3(transpose(inverse(model))) * norm; // Do this on the CPU and pass in via uniform
+    gl_Position = projection * view * model * vec4(pos, 1.0);
 });
 
 FRAGMENT_SHADER(BOID,

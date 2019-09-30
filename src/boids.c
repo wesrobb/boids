@@ -71,8 +71,6 @@ static void updateBoid(vec3 dir, vec3 pos, mat4 model, wr_aabb3 *bounds)
     glm_mat4_identity(model);
     glm_translate(model, pos);
     glm_rotate(model, -angle, right);
-    //glm_look(pos, dir, boidUp, model);
-    //glm_mat4_identity(model);
 }
 
 void wr_boids_init(wr_boids *b, wr_aabb3 *bounds, u32 numBoids, f32 speed)
