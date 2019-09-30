@@ -47,6 +47,9 @@ typedef ptrdiff_t GLintptr;
 #define GL_TRIANGLE_FAN                   0x0006
 #define GL_VERSION                        0x1F02
 #define GL_DEPTH_TEST                     0x0B71
+#define GL_BLEND                          0x0BE2
+#define GL_ONE_MINUS_SRC_ALPHA            0x0303
+#define GL_SRC_ALPHA                      0x0302
 
 #define WR_GL_LIST \
     /*  ret, name, params */ \
@@ -97,6 +100,7 @@ typedef ptrdiff_t GLintptr;
     GLE(void,      Enable,                  GLenum cap) \
     GLE(void,      DrawArraysInstanced,     GLenum mode, GLint first, GLsizei count, GLsizei instancecount) \
     GLE(void,      VertexAttribDivisor,     GLuint index, GLuint divisor) \
+    GLE(void,      BlendFunc,               GLenum sfactor, GLenum dfactor) \
     /* end */
 
 #define GLE(ret, name, ...) typedef ret GLAPIENTRY name##Fn(__VA_ARGS__); name##Fn *gl##name;

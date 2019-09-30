@@ -2,6 +2,7 @@
 
 // SDL redefines main so bring in the shaders before SDL.h
 #include "shaders/boids.h"
+#include "shaders/box.h"
 #include "shaders/light.h"
 
 #include "SDL.h"
@@ -155,20 +156,25 @@ int SDL_main(int argc, char ** argv)
     printf("OpenGL version is (%s)\n", glGetString(GL_VERSION));
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    f32 boundHalfDistance = 40.0f;
+    f32 boundsHalfSize = 40.0f;
     wr_aabb3 bounds = {
-        .minX = -boundHalfDistance,
-        .maxX = boundHalfDistance,
-        .minY = -boundHalfDistance,
-        .maxY = boundHalfDistance,
-        .minZ = -boundHalfDistance,
-        .maxZ = boundHalfDistance,
+        .minX = -boundsHalfSize,
+        .maxX = boundsHalfSize,
+        .minY = -boundsHalfSize,
+        .maxY = boundsHalfSize,
+        .minZ = -boundsHalfSize,
+        .maxZ = boundsHalfSize,
     };
     wr_boids boids;
-    u32 numBoids = 20;
+    u32 numBoids = 1;
     wr_boids_init(&boids, &bounds, numBoids, 0.01f);
     wr_camera_init(&g_camera, 0.0f, 0.0f, 50.0f);
+
+    wr_shdr_box boxShader = wr_shdr_box_init();
+    wr_shdr_box_data boxShaderData = {0};
 
     wr_shdr_boids boidsShader = wr_shdr_boids_init();
     wr_shdr_boids_data boidsShaderData = {
@@ -192,7 +198,51 @@ int SDL_main(int argc, char ** argv)
         .color = {1.0f, 1.0f, 1.0f}
     };
 
-    vec3 pyramidVertices[] = {
+    vec3 cubeVertices[] = {
+        {-1.0f,-1.0f,-1.0f},
+        { 1.0f,-1.0f,-1.0f},
+        { 1.0f, 1.0f,-1.0f},
+        { 1.0f, 1.0f,-1.0f},
+        {-1.0f, 1.0f,-1.0f},
+        {-1.0f,-1.0f,-1.0f},
+
+        {-1.0f,-1.0f, 1.0f},
+        { 1.0f,-1.0f, 1.0f},
+        { 1.0f, 1.0f, 1.0f},
+        { 1.0f, 1.0f, 1.0f},
+        {-1.0f, 1.0f, 1.0f},
+        {-1.0f,-1.0f, 1.0f},
+
+        {-1.0f, 1.0f, 1.0f},
+        {-1.0f, 1.0f,-1.0f},
+        {-1.0f,-1.0f,-1.0f},
+        {-1.0f,-1.0f,-1.0f},
+        {-1.0f,-1.0f, 1.0f},
+        {-1.0f, 1.0f, 1.0f},
+
+        { 1.0f, 1.0f, 1.0f},
+        { 1.0f, 1.0f,-1.0f},
+        { 1.0f,-1.0f,-1.0f},
+        { 1.0f,-1.0f,-1.0f},
+        { 1.0f,-1.0f, 1.0f},
+        { 1.0f, 1.0f, 1.0f},
+
+        {-1.0f,-1.0f,-1.0f},
+        { 1.0f,-1.0f,-1.0f},
+        { 1.0f,-1.0f, 1.0f},
+        { 1.0f,-1.0f, 1.0f},
+        {-1.0f,-1.0f, 1.0f},
+        {-1.0f,-1.0f,-1.0f},
+
+        {-1.0f, 1.0f,-1.0f},
+        { 1.0f, 1.0f,-1.0f},
+        { 1.0f, 1.0f, 1.0f},
+        { 1.0f, 1.0f, 1.0f},
+        {-1.0f, 1.0f, 1.0f},
+        {-1.0f, 1.0f,-1.0f},
+    };
+
+    vec3 boidVertices[] = {
         { 0.0f, 3.0f, 0.0f},
         {-1.0f,-1.0f, 1.0f},
         { 1.0f,-1.0f, 1.0f},
@@ -213,9 +263,21 @@ int SDL_main(int argc, char ** argv)
         { 1.0f,-1.0f, 1.0f},
     };
 
-    const u32 normalsCount = ARRAY_SIZE(pyramidVertices);
-    vec3 pyramidNormals[ARRAY_SIZE(pyramidVertices)];
-    CalculateNormals(pyramidVertices, ARRAY_SIZE(pyramidVertices), pyramidNormals, normalsCount);
+    const u32 normalsCount = ARRAY_SIZE(boidVertices);
+    vec3 pyramidNormals[ARRAY_SIZE(boidVertices)];
+    CalculateNormals(boidVertices, ARRAY_SIZE(boidVertices), pyramidNormals, normalsCount);
+
+    GLuint cubeVao;
+    glGenVertexArrays(1, &cubeVao);
+    glBindVertexArray(cubeVao);
+
+    GLuint cubeVertexBuffer;
+    glGenBuffers(1, &cubeVertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STREAM_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
+    glEnableVertexAttribArray(0);
 
     GLuint pyramidVao;
     glGenVertexArrays(1, &pyramidVao);
@@ -224,9 +286,9 @@ int SDL_main(int argc, char ** argv)
     GLuint pyramidVertexBuffer;
     glGenBuffers(1, &pyramidVertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, pyramidVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidVertices), pyramidVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(boidVertices), boidVertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
     glEnableVertexAttribArray(0);
 
     GLuint pyramidNormalsBuffer;
@@ -234,7 +296,7 @@ int SDL_main(int argc, char ** argv)
     glBindBuffer(GL_ARRAY_BUFFER, pyramidNormalsBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidNormals), pyramidNormals, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
     glEnableVertexAttribArray(1);
 
     GLuint boidModelsBuffer;
@@ -308,7 +370,7 @@ int SDL_main(int argc, char ** argv)
         wr_camera_view(&g_camera, boidsShaderData.view);
         glm_vec3_copy(g_camera.position, boidsShaderData.camPos);
 
-        glm_perspective(glm_rad(80.0f), (f32)width / (f32)height, 0.1f, 100.0f, boidsShaderData.proj);
+        glm_perspective(glm_rad(80.0f), (f32)width / (f32)height, 0.1f, 500.0f, boidsShaderData.proj);
 
         f32 radius = 5.0f;
         boidsShaderData.light.position[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
@@ -318,7 +380,7 @@ int SDL_main(int argc, char ** argv)
 
         glUseProgram(boidsShader.program);
         glBindVertexArray(pyramidVao);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, numBoids);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 18, numBoids);
 
         glm_mat4_identity(lightShaderData.model);
         glm_translate(lightShaderData.model, boidsShaderData.light.position);
@@ -329,7 +391,20 @@ int SDL_main(int argc, char ** argv)
 
         glUseProgram(lightShader.program);
         glBindVertexArray(lightVao);
+        glDrawArrays(GL_TRIANGLES, 0, 18);
+
+        glm_mat4_identity(boxShaderData.model);
+        vec3 scale = {boundsHalfSize, boundsHalfSize, boundsHalfSize};
+        glm_scale(boxShaderData.model, scale);
+        glm_mat4_copy(boidsShaderData.view, boxShaderData.view);
+        glm_mat4_copy(boidsShaderData.proj, boxShaderData.proj);
+
+        wr_shdr_box_update_uniforms(boxShader, boxShaderData);
+
+        glUseProgram(boxShader.program);
+        glBindVertexArray(cubeVao);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
 
         SDL_GL_SwapWindow(window);
     }
