@@ -169,7 +169,7 @@ int SDL_main(int argc, char ** argv)
         .maxZ = boundsHalfSize,
     };
     wr_boids boids;
-    u32 numBoids = 1;
+    u32 numBoids = 20;
     wr_boids_init(&boids, &bounds, numBoids, 0.01f);
     wr_camera_init(&g_camera, 0.0f, 0.0f, 50.0f);
 
@@ -370,7 +370,7 @@ int SDL_main(int argc, char ** argv)
         wr_camera_view(&g_camera, boidsShaderData.view);
         glm_vec3_copy(g_camera.position, boidsShaderData.camPos);
 
-        glm_perspective(glm_rad(80.0f), (f32)width / (f32)height, 0.1f, 500.0f, boidsShaderData.proj);
+        glm_perspective(glm_rad(80.0f), (f32)width / (f32)height, 5.0f, 200.0f, boidsShaderData.proj);
 
         f32 radius = 5.0f;
         boidsShaderData.light.position[0] = sinf((f32)SDL_GetTicks() / 5000.0f) * radius;
