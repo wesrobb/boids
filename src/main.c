@@ -1,17 +1,16 @@
 #include "types.h"
 
-// SDL redefines main so bring in the shaders before SDL.h
-#include "shaders/boids.h"
-#include "shaders/box.h"
-#include "shaders/light.h"
-
 #include "SDL.h"
-#include "cglm/cglm.h"
+#include "cglm/types.h"
 
 #include "aabb.h"
 #include "boids.h"
 #include "camera.h"
 #include "opengl.h"
+
+#include "shaders/boids.h"
+#include "shaders/box.h"
+#include "shaders/light.h"
 
 #include <stdio.h>
 

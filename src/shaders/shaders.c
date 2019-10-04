@@ -1,7 +1,7 @@
 #include "shaders.h"
 
-#include "opengl.h"
-#include "types.h"
+#include "../opengl.h"
+#include "../types.h"
 
 #include "SDL_log.h"
 

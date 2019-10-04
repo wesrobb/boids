@@ -16,6 +16,11 @@ typedef double             f64;
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
+typedef enum bool {
+    false = 0,
+    true = 1
+} bool;
+
 typedef struct wr_material {
     vec3 ambient;
     vec3 diffuse;
