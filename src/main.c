@@ -1,7 +1,7 @@
 #include "types.h"
 
 #include "SDL.h"
-#include "cglm/types.h"
+#include "cglm/cglm.h"
 
 #include "aabb.h"
 #include "boids.h"
@@ -168,8 +168,8 @@ int SDL_main(int argc, char ** argv)
         .maxZ = boundsHalfSize,
     };
     wr_boids boids;
-    u32 numBoids = 20;
-    wr_boids_init(&boids, &bounds, numBoids, 0.01f);
+    u32 numBoids = 100;
+    wr_boids_init(&boids, &bounds, numBoids, 0.01f, (vec3){ 0.5f, 0.8f, 0.2f });
     wr_camera_init(&g_camera, 0.0f, 0.0f, 50.0f);
 
     wr_shdr_box boxShader = wr_shdr_box_init();
@@ -177,7 +177,6 @@ int SDL_main(int argc, char ** argv)
 
     wr_shdr_boids boidsShader = wr_shdr_boids_init();
     wr_shdr_boids_data boidsShaderData = {
-        .color = { 0.5f, 0.8f, 0.2f },
         .light = {
             .position = {3.2f, 3.0f, 3.0f},
             .ambient  = {0.2f, 0.2f, 0.2f},
@@ -241,30 +240,9 @@ int SDL_main(int argc, char ** argv)
         {-1.0f, 1.0f,-1.0f},
     };
 
-    vec3 boidVertices[] = {
-        { 0.0f, 3.0f, 0.0f},
-        {-1.0f,-1.0f, 1.0f},
-        { 1.0f,-1.0f, 1.0f},
-        { 0.0f, 3.0f, 0.0f},
-        { 1.0f,-1.0f, 1.0f},
-        { 1.0f,-1.0f,-1.0f},
-        { 0.0f, 3.0f, 0.0f},
-        { 1.0f,-1.0f,-1.0f},
-        {-1.0f,-1.0f,-1.0f},
-        { 0.0f, 3.0f, 0.0f},
-        {-1.0f,-1.0f,-1.0f},
-        {-1.0f,-1.0f, 1.0f},
-        {-1.0f,-1.0f, 1.0f},
-        {-1.0f,-1.0f,-1.0f},
-        { 1.0f,-1.0f,-1.0f},
-        {-1.0f,-1.0f, 1.0f},
-        { 1.0f,-1.0f,-1.0f},
-        { 1.0f,-1.0f, 1.0f},
-    };
-
-    const u32 normalsCount = ARRAY_SIZE(boidVertices);
-    vec3 pyramidNormals[ARRAY_SIZE(boidVertices)];
-    CalculateNormals(boidVertices, ARRAY_SIZE(boidVertices), pyramidNormals, normalsCount);
+    const u32 normalsCount = ARRAY_SIZE(g_boidVertices);
+    vec3 pyramidNormals[ARRAY_SIZE(g_boidVertices)];
+    CalculateNormals(g_boidVertices, ARRAY_SIZE(g_boidVertices), pyramidNormals, normalsCount);
 
     GLuint cubeVao;
     glGenVertexArrays(1, &cubeVao);
@@ -285,7 +263,7 @@ int SDL_main(int argc, char ** argv)
     GLuint pyramidVertexBuffer;
     glGenBuffers(1, &pyramidVertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, pyramidVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(boidVertices), boidVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_boidVertices), g_boidVertices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
     glEnableVertexAttribArray(0);
@@ -316,6 +294,15 @@ int SDL_main(int argc, char ** argv)
     glVertexAttribDivisor(3, 1);
     glVertexAttribDivisor(4, 1);
     glVertexAttribDivisor(5, 1);
+
+    GLuint boidColorsBuffer;
+    glGenBuffers(1, &boidColorsBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, boidColorsBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * numBoids, &boids.colors[0], GL_STREAM_DRAW);
+
+    glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
+    glEnableVertexAttribArray(6);
+    glVertexAttribDivisor(6, 1);
 
     GLuint lightVao;
     glGenVertexArrays(1, &lightVao);
@@ -363,8 +350,12 @@ int SDL_main(int argc, char ** argv)
 
         glUseProgram(boidsShader.program);
         glBindVertexArray(pyramidVao);
+
         glBindBuffer(GL_ARRAY_BUFFER, boidModelsBuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(mat4)* numBoids, &boids.models[0], GL_STREAM_DRAW);
+
+        glBindBuffer(GL_ARRAY_BUFFER, boidColorsBuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vec3)* numBoids, &boids.colors[0], GL_STREAM_DRAW);
 
         wr_camera_view(&g_camera, boidsShaderData.view);
         glm_vec3_copy(g_camera.position, boidsShaderData.camPos);

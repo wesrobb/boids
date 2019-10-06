@@ -1,7 +1,6 @@
 #pragma once
 
 #include "cglm/types.h"
-#include "SDL_types.h"
 
 typedef char               i8;
 typedef short              i16;
@@ -71,7 +70,9 @@ typedef struct wr_boids {
     vec3 positions[WR_MAX_NUM_BOIDS];
     vec3 directions[WR_MAX_NUM_BOIDS];
     mat4 models[WR_MAX_NUM_BOIDS];
+    vec3 colors[WR_MAX_NUM_BOIDS];
 
+    vec3 vertices[18];
     wr_aabb3 bounds;
     u32 numBoids;
     f32 speed;

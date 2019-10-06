@@ -1,8 +1,9 @@
 #include "boids.h"
 
-#include "SDL_assert.h"
 #include "aabb.h"
+#include "collision.h"
 
+#include "SDL.h"
 #include "cglm/cglm.h"
 
 #include "stdlib.h"
@@ -10,6 +11,28 @@
 
 #define MIN_VELOCITY 0.0005f
 #define MAX_VELOCITY 0.004f
+
+
+vec3 g_boidVertices[] = {
+        { 0.0f, 3.0f, 0.0f},
+        {-1.0f,-1.0f, 1.0f},
+        { 1.0f,-1.0f, 1.0f},
+        { 0.0f, 3.0f, 0.0f},
+        { 1.0f,-1.0f, 1.0f},
+        { 1.0f,-1.0f,-1.0f},
+        { 0.0f, 3.0f, 0.0f},
+        { 1.0f,-1.0f,-1.0f},
+        {-1.0f,-1.0f,-1.0f},
+        { 0.0f, 3.0f, 0.0f},
+        {-1.0f,-1.0f,-1.0f},
+        {-1.0f,-1.0f, 1.0f},
+        {-1.0f,-1.0f, 1.0f},
+        {-1.0f,-1.0f,-1.0f},
+        { 1.0f,-1.0f,-1.0f},
+        {-1.0f,-1.0f, 1.0f},
+        { 1.0f,-1.0f,-1.0f},
+        { 1.0f,-1.0f, 1.0f},
+};
 
 static f32 f32_rand_range(f32 min, f32 max)
 {
@@ -73,7 +96,7 @@ static void updateBoid(vec3 dir, vec3 pos, mat4 model, wr_aabb3 *bounds)
     glm_rotate(model, -angle, right);
 }
 
-void wr_boids_init(wr_boids *b, wr_aabb3 *bounds, u32 numBoids, f32 speed)
+void wr_boids_init(wr_boids *b, wr_aabb3 *bounds, u32 numBoids, f32 speed, vec3 color)
 {
     SDL_assert(b);
     SDL_assert(numBoids <= WR_MAX_NUM_BOIDS);
@@ -88,8 +111,19 @@ void wr_boids_init(wr_boids *b, wr_aabb3 *bounds, u32 numBoids, f32 speed)
     {
         vec3_rand_bounded(b->positions[i], &b->bounds);
         vec3_rand(b->directions[i], -1.0f, 1.0f);
+        glm_vec3_copy(color, b->colors[i]);
 
         updateBoid(b->directions[i], b->positions[i], b->models[i], bounds);
+    }
+}
+
+static void convert_boid_verts_to_world_positions(mat4 model, vec3 dest[18])
+{
+    for (u32 i = 0; i < 18; i++)
+    {
+        vec4 temp;
+        glm_mat4_mulv3(model, g_boidVertices[i], 1.0f, temp);
+        glm_vec4_copy3(temp, dest[i]);
     }
 }
 
@@ -107,5 +141,23 @@ void wr_boids_update(wr_boids* b, f32 dt)
         glm_vec3_add(b->positions[i], velocity, b->positions[i]);
 
         updateBoid(b->directions[i], b->positions[i], b->models[i], bounds);
+    }
+
+    vec3 iWorldVerts[18];
+    vec3 jWorldVerts[18];
+
+    // All the boids are in their new positions. Now check collisions
+    for (u32 i = 0; i < numBoids - 1; i++)
+    {
+        convert_boid_verts_to_world_positions(b->models[i], iWorldVerts);
+        for (u32 j = i + 1; j < numBoids; j++)
+        {
+            convert_boid_verts_to_world_positions(b->models[j], jWorldVerts);
+            if (gjk_collide(iWorldVerts[0], 18, jWorldVerts[0], 18))
+            {
+                glm_vec3_copy((vec3){1.0f, 0.0f, 0.0f}, b->colors[i]);
+                glm_vec3_copy((vec3){1.0f, 0.0f, 0.0f}, b->colors[j]);
+            }
+        }
     }
 }

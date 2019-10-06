@@ -8,16 +8,19 @@
 VERTEX_SHADER(BOID,
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 norm;
-layout(location = 2) in mat4 model;
+layout(location = 2) in mat4 model; // mat4 takes up layout indices 2,3,4,5
+layout(location = 6) in vec3 color;
 
 out vec3 FragPos;
 out vec3 Normal;
+out vec3 Color;
 
 uniform mat4 projection;
 uniform mat4 view;
 
 void main()
 {
+    Color = color;
     FragPos = vec3(model * vec4(pos, 1.0));
     Normal = mat3(transpose(inverse(model))) * norm; // Do this on the CPU and pass in via uniform
     gl_Position = projection * view * model * vec4(pos, 1.0);
@@ -29,6 +32,7 @@ out vec4 FragColor;
 
 in vec3 FragPos;
 in vec3 Normal;
+in vec3 Color;
 
 struct Material {
     vec3 ambient;
@@ -45,7 +49,6 @@ struct Light {
     vec3 specular;
 };
 
-uniform vec3 color;
 uniform vec3 cameraPos;
 uniform Material material;
 uniform Light light;
@@ -64,7 +67,7 @@ void main()
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     vec3 specular = light.specular * (spec * material.specular);
 
-    vec3 result = (ambient + diffuse + specular) * color;
+    vec3 result = (ambient + diffuse + specular) * Color;
     FragColor = vec4(result, 1.0);
 });
 
@@ -80,7 +83,6 @@ wr_shdr_boids wr_shdr_boids_init()
     result.program = program;
     result.uniforms.proj = glGetUniformLocation(program, "projection");
     result.uniforms.view = glGetUniformLocation(program, "view");
-    result.uniforms.color = glGetUniformLocation(program, "color");
     result.uniforms.camPos = glGetUniformLocation(program, "cameraPos");
     result.uniforms.light.position = glGetUniformLocation(program, "light.position");
     result.uniforms.light.ambient = glGetUniformLocation(program, "light.ambient");
@@ -101,7 +103,6 @@ void wr_shdr_boids_update_uniforms(wr_shdr_boids shdr, wr_shdr_boids_data data)
 
     glUniformMatrix4fv(shdr.uniforms.view, 1, GL_FALSE, (GLfloat *)data.view);
     glUniformMatrix4fv(shdr.uniforms.proj, 1, GL_FALSE, (GLfloat *)data.proj);
-    glUniform3fv(shdr.uniforms.color, 1, data.color);
     glUniform3fv(shdr.uniforms.camPos, 1, data.camPos);
     glUniform3fv(shdr.uniforms.light.position, 1, data.light.position);
     glUniform3fv(shdr.uniforms.light.ambient, 1, data.light.ambient);

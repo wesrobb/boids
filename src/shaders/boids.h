@@ -34,7 +34,6 @@ typedef struct wr_shdr_boids {
 typedef struct wr_shdr_boids_data {
     mat4 view;
     mat4 proj;
-    vec3 color;
     vec3 camPos;
     wr_light light;
     wr_material material;
